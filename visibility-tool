@@ -1,0 +1,1617 @@
+<!--
+  AlignmentSEO — Visibility Score System (Final Production Build)
+  Paste this entire block into a Squarespace Code Block.
+
+  CONFIGURATION: Search for "CONFIG" below to set your API keys,
+  Calendly link, webhook URLs, and phone number.
+-->
+
+<style>
+/* ================================================================
+   BASE
+   ================================================================ */
+.alseo{background:#0d0d0d;color:#fff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:700px;margin:0 auto;padding:48px 28px;box-sizing:border-box}
+.alseo *,.alseo *::before,.alseo *::after{box-sizing:border-box}
+
+/* TYPOGRAPHY */
+.alseo-eyebrow{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:#c9a050;margin-bottom:10px}
+.alseo-heading{font-size:26px;font-weight:700;line-height:1.25;margin:0 0 10px;color:#fff}
+.alseo-sub{font-size:15px;color:#777;line-height:1.6;margin:0 0 36px}
+
+/* FORM ELEMENTS */
+.alseo-group{margin-bottom:22px}
+.alseo-label{display:block;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:8px}
+.alseo-input,.alseo-select{width:100%;background:#161616;border:1px solid #262626;color:#fff;padding:13px 14px;font-size:15px;border-radius:3px;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+.alseo-input:focus,.alseo-select:focus{outline:none;border-color:#c9a050}
+.alseo-select option{background:#161616;color:#fff}
+.alseo-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.alseo-radios{display:flex;gap:8px;flex-wrap:wrap}
+.alseo-radio{flex:1;min-width:80px;background:#161616;border:1px solid #262626;color:#777;padding:11px 10px;text-align:center;font-size:13px;border-radius:3px;cursor:pointer;transition:all .15s;user-select:none}
+.alseo-radio:hover{border-color:#444;color:#ccc}
+.alseo-radio.on{border-color:#c9a050;color:#c9a050;background:#1a1500}
+
+/* BUTTONS */
+.alseo-btn{width:100%;background:#c9a050;color:#000;border:none;padding:16px;font-size:15px;font-weight:700;letter-spacing:.5px;border-radius:3px;cursor:pointer;margin-top:6px;transition:background .2s}
+.alseo-btn:hover{background:#d4ad5f}
+.alseo-btn.ghost{background:#161616;color:#666;margin-top:12px}
+.alseo-btn.ghost:hover{background:#1e1e1e;color:#999}
+.alseo-note{text-align:center;font-size:12px;color:#444;margin-top:10px}
+.alseo-error{color:#ff5252;font-size:13px;margin-top:8px;display:none}
+
+/* LOADING STATE */
+.alseo-loading{display:none;text-align:center;padding:60px 0}
+.alseo-loading.show{display:block}
+.alseo-loading p{color:#777;font-size:15px}
+.alseo-spinner{width:40px;height:40px;border:3px solid #262626;border-top:3px solid #c9a050;border-radius:50%;margin:0 auto 20px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ================================================================
+   REPORT
+   ================================================================ */
+.alseo-report{display:none}
+.alseo-report.show{display:block}
+
+/* Score */
+.alseo-score-wrap{text-align:center;padding:28px 0 20px}
+.alseo-score-num{font-size:80px;font-weight:800;line-height:1}
+.alseo-score-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#555;margin:6px 0 10px}
+.alseo-score-grade{font-size:17px;font-weight:600}
+
+/* Dividers + sections */
+.alseo-divider{border:none;border-top:1px solid #1e1e1e;margin:28px 0}
+.alseo-section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:18px}
+
+/* Category bars */
+.alseo-cat{margin-bottom:20px}
+.alseo-cat-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.alseo-cat-name{font-size:13px;color:#aaa}
+.alseo-cat-pts{font-size:12px;color:#555}
+.alseo-bar{background:#1a1a1a;height:5px;border-radius:3px;overflow:hidden}
+.alseo-fill{height:100%;border-radius:3px;transition:width .9s cubic-bezier(.4,0,.2,1)}
+
+/* Findings */
+.alseo-finding{border-left:2px solid #c9a050;padding:14px 16px;margin-bottom:10px;background:#111;border-radius:0 3px 3px 0}
+.alseo-finding.good{border-color:#4caf50}
+.alseo-finding.warn{border-color:#ff9800}
+.alseo-finding.bad{border-color:#f44336}
+.alseo-finding-title{font-size:14px;font-weight:600;margin-bottom:5px;color:#fff}
+.alseo-finding-body{font-size:13px;color:#777;line-height:1.6}
+
+/* Competitor comparison */
+.comp-wrap{margin:30px 0}
+.comp-title{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:16px}
+.comp-row{margin-bottom:14px}
+.comp-label{font-size:12px;color:#888;margin-bottom:4px}
+.comp-bars{display:flex;height:10px;background:#1a1a1a;border-radius:6px;overflow:hidden;position:relative}
+.comp-you{background:#c9a050;transition:width 1s ease;position:absolute;left:0;top:0;height:100%;border-radius:6px}
+.comp-them{background:#444;transition:width 1s ease;position:absolute;left:0;top:0;height:100%;border-radius:6px}
+.comp-meta{display:flex;justify-content:space-between;font-size:11px;color:#777;margin-top:4px}
+.comp-gap{margin-top:20px;padding:16px;background:#111;border-left:2px solid #c9a050;font-size:14px;color:#ccc;line-height:1.6}
+
+/* Revenue */
+.alseo-revenue{background:#111;border:1px solid #1e1e1e;border-radius:3px;padding:24px;text-align:center;margin:28px 0}
+.alseo-rev-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:10px}
+.alseo-rev-num{font-size:44px;font-weight:800;color:#c9a050;line-height:1}
+.alseo-rev-caption{font-size:12px;color:#444;margin-top:8px;line-height:1.5}
+
+/* Timeline / projections */
+.timeline-wrap{margin:30px 0}
+.timeline-title{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#666;margin-bottom:16px}
+.timeline-box{background:#111;border-left:2px solid #c9a050;padding:16px;margin-bottom:12px;font-size:14px;color:#ccc;line-height:1.6}
+.timeline-bad{border-color:#f44336}
+.timeline-good{border-color:#4caf50}
+
+/* CTA */
+.alseo-cta{background:#c9a050;border-radius:3px;padding:28px 24px;text-align:center;margin-top:28px}
+.alseo-cta-title{font-size:19px;font-weight:800;color:#000;margin-bottom:6px}
+.alseo-cta-body{font-size:14px;color:rgba(0,0,0,.65);margin-bottom:18px;line-height:1.5}
+.alseo-cta-link{display:inline-block;background:#000;color:#c9a050;padding:13px 28px;font-size:14px;font-weight:700;border-radius:3px;text-decoration:none;letter-spacing:.5px}
+.alseo-cta-link:hover{background:#111}
+
+/* Calendar embed */
+.calendar-wrap{margin-top:30px;border:1px solid #1e1e1e;background:#111;padding:20px;border-radius:3px}
+.calendar-header{margin-bottom:16px}
+.calendar-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
+.calendar-sub{font-size:13px;color:#777}
+
+/* Disclaimer */
+.alseo-disclaimer{font-size:11px;color:#333;text-align:center;margin-top:20px;line-height:1.6}
+
+/* Pulse animation for urgency */
+.pulse-glow{animation:pulseGlow 2s infinite}
+@keyframes pulseGlow{0%{box-shadow:0 0 0 rgba(201,160,80,0)}50%{box-shadow:0 0 12px rgba(201,160,80,.4)}100%{box-shadow:0 0 0 rgba(201,160,80,0)}}
+
+/* Google Places search + field locking */
+.alseo-search-wrap{position:relative;margin-bottom:22px}
+.alseo-search-wrap .alseo-input{padding-right:40px}
+.alseo-search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;font-size:18px;cursor:pointer;line-height:1;padding:0}
+.alseo-search-clear:hover{color:#c9a050}
+.alseo-verified{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#4caf50;margin-top:6px}
+.alseo-verified::before{content:'✓';font-weight:700}
+.alseo-input.locked{border-color:#c9a050;color:#c9a050;background:#0f0e00;cursor:not-allowed}
+.alseo-input.locked:focus{border-color:#c9a050}
+.pac-container{background:#161616;border:1px solid #262626;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.pac-item{padding:10px 14px;color:#ccc;font-size:13px;border-top:1px solid #1e1e1e;cursor:pointer}
+.pac-item:hover,.pac-item-selected{background:#1a1a1a}
+.pac-item-query{color:#fff;font-weight:600}
+.pac-matched{color:#c9a050}
+
+/* Competitor table */
+.comp-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+.comp-table th{text-align:left;padding:8px 10px;color:#555;font-size:11px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid #1e1e1e}
+.comp-table td{padding:10px 10px;border-bottom:1px solid #111;color:#ccc;vertical-align:middle}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table .you-row td{color:#c9a050;font-weight:600}
+.comp-rank{display:inline-block;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;font-size:11px;font-weight:700;margin-right:6px}
+.comp-rank.r1{background:#c9a050;color:#000}
+.comp-rank.r2{background:#444;color:#fff}
+.comp-rank.r3{background:#333;color:#fff}
+.comp-bar-sm{background:#1a1a1a;height:4px;border-radius:2px;overflow:hidden;width:60px;display:inline-block;vertical-align:middle;margin-left:6px}
+.comp-bar-sm-fill{height:100%;border-radius:2px;background:#c9a050}
+
+/* Market demand badge */
+.demand-badge{display:inline-flex;align-items:center;gap:8px;background:#111;border:1px solid #1e1e1e;border-radius:3px;padding:10px 14px;margin:16px 0;font-size:13px;color:#ccc}
+.demand-pulse{width:8px;height:8px;border-radius:50%;background:#4caf50;animation:demandPulse 1.5s infinite}
+@keyframes demandPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+/* Responsive */
+@media(max-width:540px){
+  .alseo{padding:32px 20px}
+  .alseo-grid{grid-template-columns:1fr}
+  .alseo-score-num{font-size:64px}
+  .alseo-rev-num{font-size:32px}
+}
+</style>
+
+<div class="alseo">
+
+  <!-- ===== FORM ===== -->
+  <div id="alseo-form">
+    <div class="alseo-eyebrow">AlignmentSEO</div>
+    <h2 class="alseo-heading" id="main-headline">Visibility Score Report</h2>
+    <p class="alseo-sub">Answer honestly. The score reflects real local SEO signals — not a number designed to scare you into buying something.</p>
+
+    <!-- Google Places Business Search (visible only when API is active) -->
+    <div id="biz-search-wrap" style="display:none;" class="alseo-group">
+      <label class="alseo-label">Find Your Business</label>
+      <div class="alseo-search-wrap">
+        <input class="alseo-input" id="business-search" type="text" placeholder="Start typing your business name...">
+        <button class="alseo-search-clear" id="biz-clear-btn" style="display:none;" onclick="ALSEO.clearBizSearch()" title="Clear">&#x2715;</button>
+      </div>
+      <div id="biz-verified" style="display:none;" class="alseo-verified">Business data loaded from Google</div>
+    </div>
+
+    <!-- Lead Capture -->
+    <div class="alseo-grid">
+      <div class="alseo-group">
+        <label class="alseo-label">Your Name</label>
+        <input class="alseo-input" id="a-name" type="text" placeholder="Jane Smith">
+      </div>
+      <div class="alseo-group">
+        <label class="alseo-label">Email Address</label>
+        <input class="alseo-input" id="a-email" type="email" placeholder="you@business.com">
+      </div>
+    </div>
+    <div class="alseo-group">
+      <label class="alseo-label">Phone (to receive your results instantly)</label>
+      <input class="alseo-input" id="a-phone" type="tel" placeholder="313-555-1234">
+    </div>
+
+    <hr class="alseo-divider">
+
+    <!-- Business Info -->
+    <div class="alseo-grid">
+      <div class="alseo-group">
+        <label class="alseo-label">Business Name</label>
+        <input class="alseo-input" id="a-biz" type="text" placeholder="Your Business">
+      </div>
+      <div class="alseo-group">
+        <label class="alseo-label">City</label>
+        <input class="alseo-input" id="a-city" type="text" placeholder="Detroit, MI">
+      </div>
+    </div>
+
+    <div class="alseo-group">
+      <label class="alseo-label">Business Type</label>
+      <select class="alseo-select" id="a-type">
+        <option value="">Select your category</option>
+        <option value="chiropractor">Chiropractor</option>
+        <option value="dental">Dental Practice</option>
+        <option value="medspa">Med Spa</option>
+        <option value="salon">Salon / Beauty</option>
+        <option value="auto">Auto Repair</option>
+        <option value="hvac">HVAC</option>
+        <option value="plumbing">Plumbing</option>
+        <option value="retail">Retail Boutique</option>
+        <option value="other">Other Local Business</option>
+      </select>
+    </div>
+
+    <div class="alseo-grid">
+      <div class="alseo-group">
+        <label class="alseo-label">Years in Business</label>
+        <input class="alseo-input" id="a-years" type="number" placeholder="5" min="0" max="100">
+      </div>
+      <div class="alseo-group">
+        <label class="alseo-label">Total Google Reviews</label>
+        <input class="alseo-input" id="a-reviews" type="number" placeholder="24" min="0">
+      </div>
+    </div>
+
+    <div class="alseo-grid">
+      <div class="alseo-group">
+        <label class="alseo-label">Average Star Rating</label>
+        <input class="alseo-input" id="a-rating" type="number" placeholder="4.4" min="1" max="5" step="0.1">
+      </div>
+      <div class="alseo-group">
+        <label class="alseo-label">New Reviews Per Month</label>
+        <input class="alseo-input" id="a-vel" type="number" placeholder="2" min="0">
+      </div>
+    </div>
+
+    <div class="alseo-grid">
+      <div class="alseo-group">
+        <label class="alseo-label">Service Pages on Website</label>
+        <input class="alseo-input" id="a-pages" type="number" placeholder="3" min="0">
+      </div>
+      <div class="alseo-group">
+        <label class="alseo-label">Photos on Google Profile</label>
+        <input class="alseo-input" id="a-photos" type="number" placeholder="12" min="0">
+      </div>
+    </div>
+
+    <div class="alseo-group">
+      <label class="alseo-label">Is your Google Business Profile fully filled out?</label>
+      <div class="alseo-radios">
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'gbp','yes')">Yes, complete</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'gbp','partial')">Partially</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'gbp','no')">No / Not sure</div>
+      </div>
+    </div>
+
+    <div class="alseo-group">
+      <label class="alseo-label">Do you post updates to Google at least weekly?</label>
+      <div class="alseo-radios">
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'posts','yes')">Yes, weekly</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'posts','sometimes')">Occasionally</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'posts','no')">Rarely / Never</div>
+      </div>
+    </div>
+
+    <div class="alseo-group">
+      <label class="alseo-label">Do you respond to your Google reviews?</label>
+      <div class="alseo-radios">
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'responses','yes')">Yes, all of them</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'responses','some')">Some of them</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'responses','no')">Rarely / Never</div>
+      </div>
+    </div>
+
+    <div class="alseo-group">
+      <label class="alseo-label">Does your website clearly list your services and city?</label>
+      <div class="alseo-radios">
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'site','yes')">Yes, clearly</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'site','partial')">Somewhat</div>
+        <div class="alseo-radio" onclick="ALSEO.pick(this,'site','no')">No / Unsure</div>
+      </div>
+    </div>
+
+    <div class="alseo-group">
+      <label class="alseo-label">Estimated value of one new customer ($)</label>
+      <input class="alseo-input" id="a-rev" type="number" placeholder="450" min="0">
+      <div style="font-size:12px;color:#444;margin-top:6px;">Used only to estimate revenue impact. Leave blank to skip.</div>
+    </div>
+
+    <div id="a-err" class="alseo-error">Please fill in at least your review count and rating before generating your report.</div>
+    <button class="alseo-btn" id="scan-btn" onclick="ALSEO.startScan()">Reveal My Visibility Score</button>
+    <p class="alseo-note">Your information is private. No cost, no obligation.</p>
+  </div>
+
+  <!-- ===== LOADING ===== -->
+  <div id="alseo-loading" class="alseo-loading">
+    <div class="alseo-spinner"></div>
+    <p id="loading-msg">Analyzing your business presence...</p>
+  </div>
+
+  <!-- ===== REPORT ===== -->
+  <div id="alseo-report" class="alseo-report">
+    <div class="alseo-eyebrow">AlignmentSEO</div>
+    <h2 class="alseo-heading" id="r-title">Visibility Report</h2>
+    <p class="alseo-sub" id="r-sub"></p>
+
+    <div class="alseo-score-wrap">
+      <div class="alseo-score-num" id="r-score">--</div>
+      <div class="alseo-score-lbl">out of 100</div>
+      <div class="alseo-score-grade" id="r-grade"></div>
+    </div>
+
+    <hr class="alseo-divider">
+    <div class="alseo-section-label">Score Breakdown</div>
+    <div id="r-cats"></div>
+
+    <hr class="alseo-divider">
+    <div class="alseo-section-label">What I Found</div>
+    <div id="r-findings"></div>
+
+    <!-- Competitor comparison (populated by Google API or skipped) -->
+    <div id="r-comparison"></div>
+
+    <!-- Revenue -->
+    <div id="r-revenue"></div>
+
+    <!-- AI Analysis (populated by backend) -->
+    <div id="r-ai-analysis"></div>
+
+    <!-- Growth Timeline -->
+    <div id="r-timeline"></div>
+
+    <!-- Competitor Breakdown + Outrank Plan -->
+    <div id="r-competitor-breakdown"></div>
+
+    <!-- Booking Section -->
+    <div id="r-booking"></div>
+
+    <!-- Disclaimer -->
+    <div class="alseo-disclaimer">This score is based on self-reported data and known local SEO ranking signals. It is an honest estimate, not a guarantee of results. Individual business results vary.</div>
+
+    <button class="alseo-btn ghost" onclick="ALSEO.reset()">Start Over</button>
+  </div>
+
+</div>
+
+<!-- ================================================================
+     GOOGLE PLACES (optional — remove if not using auto-fill)
+     Set your API key in CONFIG below, or remove this script tag.
+     ================================================================ -->
+<!-- <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&libraries=places"></script> -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==================================================================
+     CONFIG — Edit these values for your setup
+     ================================================================== */
+  var CONFIG = {
+    // Your Calendly link (required)
+    calendlyURL:    'https://calendly.com/YOUR-LINK',
+
+    // Your phone number (required)
+    phone:          '3134237225',
+    phoneDisplay:   '313-423-7225',
+
+    // Backend API base URL (set after deploying Vercel backend)
+    // Leave empty to skip backend features
+    apiBase:        '',  // e.g. 'https://your-app.vercel.app'
+
+    // Zapier webhook URL for lead capture (alternative to backend)
+    // Leave empty to skip
+    zapierWebhook:  '',  // e.g. 'https://hooks.zapier.com/hooks/catch/XXXXX/XXXXX/'
+
+    // Google Places API (set to true if you loaded the script above)
+    googlePlaces:   false,
+
+    // A/B test variants
+    abEnabled:      true
+  };
+
+  /* ==================================================================
+     STATE
+     ================================================================== */
+  var sel = {};        // radio selections
+  var compData = null; // competitor data from Google API
+
+  var session = {
+    startTime:              Date.now(),
+    score:                  null,
+    scrollDepth:            0,
+    viewedBooking:          false,
+    clickedBooking:         false,
+    hesitated:              false,
+    intent:                 'low',
+    estimatedMonthlyLoss:   0,
+    missedCustomers:        0,
+    demandEstimate:         0
+  };
+
+  /* ==================================================================
+     A/B TEST VARIANTS
+     ================================================================== */
+  var abVariants = {
+    headline: [
+      'Visibility Score Report',
+      'See What\'s Costing You Customers'
+    ],
+    cta: [
+      'Book Your Free Visibility Review',
+      'See What I\'d Fix First'
+    ],
+    urgency: [
+      'Most businesses wait too long to fix this.',
+      'Every week you wait, competitors pull ahead.'
+    ]
+  };
+
+  // Simple in-memory A/B assignment (no localStorage)
+  var abAssignments = {};
+  var abStats = {};
+
+  function getVariant(key) {
+    if (!CONFIG.abEnabled) return abVariants[key][0];
+    if (abAssignments[key]) return abAssignments[key];
+    var opts = abVariants[key];
+    // Weighted selection: favor winners
+    var weights = opts.map(function(o) { return (abStats[key + ':' + o] || 0) + 1; });
+    var total = weights.reduce(function(a,b){return a+b;},0);
+    var r = Math.random() * total;
+    for (var i = 0; i < opts.length; i++) {
+      if (r < weights[i]) { abAssignments[key] = opts[i]; return opts[i]; }
+      r -= weights[i];
+    }
+    abAssignments[key] = opts[0];
+    return opts[0];
+  }
+
+  function recordWin(key) {
+    var choice = abAssignments[key];
+    if (choice) abStats[key + ':' + choice] = (abStats[key + ':' + choice] || 0) + 1;
+  }
+
+  /* ==================================================================
+     INDUSTRY PERSONALIZATION
+     ================================================================== */
+  var industryMessages = {
+    chiropractor: {
+      headline: 'Patients are choosing whoever shows up first.',
+      benchmark: 'Top clinics often have 100-300+ reviews.',
+      planIntro: 'Patients searching for relief are choosing based on visibility.'
+    },
+    dental: {
+      headline: 'Patients search, compare, and pick — fast.',
+      benchmark: 'Top dental practices often have 80-250+ reviews.',
+      planIntro: 'Dental patients rarely scroll past the first few results.'
+    },
+    medspa: {
+      headline: 'Clients are picking whoever looks most established online.',
+      benchmark: 'Top med spas often have 60-200+ reviews.',
+      planIntro: 'Med spa clients make trust-based decisions from search results.'
+    },
+    salon: {
+      headline: 'Clients book with whoever shows up first and looks active.',
+      benchmark: 'Top salons often have 80-300+ reviews.',
+      planIntro: 'Salon clients rely heavily on reviews and photo presence.'
+    },
+    auto: {
+      headline: 'When cars break, people don\'t compare — they pick whoever appears.',
+      benchmark: 'Top shops often have 80-200+ reviews.',
+      planIntro: 'Urgent repairs mean people pick whoever shows up first.'
+    },
+    hvac: {
+      headline: 'Emergency calls go to whoever shows up first.',
+      benchmark: 'Top HVAC companies often have 60-150+ reviews.',
+      planIntro: 'HVAC customers are in urgent need and pick the first credible result.'
+    },
+    plumbing: {
+      headline: 'When pipes burst, they call whoever Google shows them.',
+      benchmark: 'Top plumbers often have 50-150+ reviews.',
+      planIntro: 'Plumbing emergencies mean zero comparison shopping.'
+    },
+    retail: {
+      headline: 'If your store doesn\'t show up, they go somewhere else.',
+      benchmark: 'Top boutiques rely heavily on visual activity and reviews.',
+      planIntro: 'Retail shoppers are choosing based on visibility and social proof.'
+    },
+    other: {
+      headline: 'If you\'re not visible, you\'re losing customers.',
+      benchmark: 'Top businesses consistently outperform in reviews and activity.',
+      planIntro: 'Local customers are making fast decisions based on what they see.'
+    }
+  };
+
+  /* ==================================================================
+     INDUSTRY DATA — Revenue multipliers + search demand ranges
+     ================================================================== */
+
+  // Monthly missed-customer multiplier (base demand for each industry)
+  var industryMultipliers = {
+    auto:         14,
+    chiropractor: 10,
+    dental:       16,
+    hvac:         18,
+    plumbing:     20,
+    retail:         8,
+    medspa:        12,
+    salon:          9,
+    other:         10
+  };
+
+  // Estimated monthly local search volume range [min, max]
+  var demandRanges = {
+    auto:         [200, 500],
+    chiropractor: [150, 400],
+    dental:       [300, 700],
+    hvac:         [250, 600],
+    plumbing:     [300, 800],
+    medspa:       [120, 350],
+    salon:        [180, 450],
+    retail:       [100, 300],
+    other:        [150, 400]
+  };
+
+  function getIndustry() {
+    return el('a-type').value || 'other';
+  }
+
+  function getIndustryData() {
+    return industryMessages[getIndustry()] || industryMessages['other'];
+  }
+
+  function getMonthlyDemand(industry) {
+    var range = demandRanges[industry] || demandRanges['other'];
+    return Math.floor(Math.random() * (range[1] - range[0]) + range[0]);
+  }
+
+  function getMissedPerMonth(industry, score) {
+    var baseDemand = industryMultipliers[industry] || industryMultipliers['other'];
+
+    // Base loss factor: higher score = less loss
+    var visibilityLossFactor = (100 - score) / 100;
+
+    // Aggressive multiplier for businesses in the danger zone
+    if (score < 40) visibilityLossFactor *= 1.3;
+    if (score < 25) visibilityLossFactor *= 1.5;
+
+    return Math.max(0, Math.round(baseDemand * visibilityLossFactor));
+  }
+
+  /* ==================================================================
+     SCROLL + BEHAVIOR TRACKING
+     ================================================================== */
+  window.addEventListener('scroll', function() {
+    var pct = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+    if (pct > session.scrollDepth) session.scrollDepth = pct;
+  });
+
+  window.addEventListener('beforeunload', function() {
+    if (!session.clickedBooking && session.score !== null) {
+      sendTrackingData();
+    }
+  });
+
+  /* ==================================================================
+     HELPERS
+     ================================================================== */
+  function el(id) { return document.getElementById(id); }
+  function num(id) { return parseFloat(el(id).value) || 0; }
+
+  /* ==================================================================
+     GOOGLE PLACES AUTO-FILL (optional)
+     ================================================================== */
+  var lockedByGoogle = false; // tracks if fields were auto-filled
+
+  function initGoogleAutocomplete() {
+    if (!CONFIG.googlePlaces || typeof google === 'undefined') return;
+
+    // Show the search box
+    var wrap = el('biz-search-wrap');
+    if (wrap) wrap.style.display = 'block';
+
+    var searchInput = el('business-search');
+    if (!searchInput) return;
+
+    var autocomplete = new google.maps.places.Autocomplete(searchInput, {
+      types: ['establishment'],
+      fields: ['name', 'rating', 'user_ratings_total', 'geometry', 'formatted_address', 'vicinity']
+    });
+
+    autocomplete.addListener('place_changed', function() {
+      var place = autocomplete.getPlace();
+      if (!place || !place.name) return;
+
+      // Auto-fill fields
+      if (place.name) el('a-biz').value = place.name;
+      if (place.user_ratings_total) el('a-reviews').value = place.user_ratings_total;
+      if (place.rating) el('a-rating').value = place.rating;
+
+      // Extract city from address
+      var addr = place.vicinity || place.formatted_address || '';
+      if (addr && !el('a-city').value) {
+        var parts = addr.split(',');
+        if (parts.length >= 2) el('a-city').value = parts[parts.length - 2].trim();
+      }
+
+      // Lock the auto-filled fields
+      lockField('a-biz');
+      lockField('a-reviews');
+      lockField('a-rating');
+      lockedByGoogle = true;
+
+      // Show verified badge + clear button
+      var verified = el('biz-verified');
+      var clearBtn = el('biz-clear-btn');
+      if (verified) verified.style.display = 'flex';
+      if (clearBtn) clearBtn.style.display = 'block';
+
+      // Find competitors
+      if (place.geometry) findCompetitors(place.geometry.location);
+    });
+  }
+
+  function lockField(id) {
+    var input = el(id);
+    if (!input) return;
+    input.classList.add('locked');
+    input.setAttribute('readonly', 'readonly');
+  }
+
+  function unlockField(id) {
+    var input = el(id);
+    if (!input) return;
+    input.classList.remove('locked');
+    input.removeAttribute('readonly');
+  }
+
+  function clearBizSearch() {
+    // Clear search input
+    var searchInput = el('business-search');
+    if (searchInput) searchInput.value = '';
+
+    // Unlock and clear auto-filled fields
+    ['a-biz', 'a-reviews', 'a-rating'].forEach(function(id) {
+      unlockField(id);
+      el(id).value = '';
+    });
+
+    // Hide verified badge + clear button
+    var verified = el('biz-verified');
+    var clearBtn = el('biz-clear-btn');
+    if (verified) verified.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    lockedByGoogle = false;
+    compData = null;
+  }
+
+  function findCompetitors(location) {
+    if (typeof google === 'undefined') return;
+    var industry = getIndustry();
+
+    // Map industry to Google place type
+    var typeMap = {
+      chiropractor: 'physiotherapist',
+      dental: 'dentist',
+      medspa: 'beauty_salon',
+      salon: 'hair_care',
+      auto: 'car_repair',
+      hvac: 'electrician',
+      plumbing: 'plumber',
+      retail: 'store'
+    };
+    var placeType = typeMap[industry] || 'establishment';
+
+    var service = new google.maps.places.PlacesService(document.createElement('div'));
+    service.nearbySearch({
+      location: location,
+      radius: 5000,
+      type: [placeType]
+    }, function(results, status) {
+      if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) return;
+
+      // Take top 4 (we'll exclude the user's own business when rendering)
+      var candidates = results.slice(0, 4);
+      var avgR = 0, avgRat = 0, count = 0;
+
+      var competitors = candidates.map(function(c) {
+        avgR += c.user_ratings_total || 0;
+        avgRat += c.rating || 0;
+        count++;
+        return {
+          name: c.name,
+          reviews: c.user_ratings_total || 0,
+          rating: c.rating || 0
+        };
+      });
+
+      compData = {
+        avgReviews: count ? Math.round(avgR / count) : 0,
+        avgRating: count ? (avgRat / count).toFixed(1) : '0',
+        topCompetitor: competitors[0],
+        competitors: competitors.slice(0, 3) // top 3 by proximity/rank
+      };
+    });
+  }
+
+  /* ==================================================================
+     INTENT PREDICTION
+     ================================================================== */
+  function predictIntent() {
+    var s = 0;
+    if (session.scrollDepth > 70) s += 3; else if (session.scrollDepth > 40) s += 2; else s += 1;
+    var t = (Date.now() - session.startTime) / 1000;
+    if (t > 60) s += 3; else if (t > 30) s += 2; else s += 1;
+    if (session.score !== null) {
+      if (session.score < 40) s += 3; else if (session.score < 70) s += 2; else s += 1;
+    }
+    if (s >= 7) return 'high';
+    if (s >= 5) return 'medium';
+    return 'low';
+  }
+
+  /* ==================================================================
+     RADIO PICKER
+     ================================================================== */
+  function pick(elem, group, val) {
+    var siblings = elem.parentElement.querySelectorAll('.alseo-radio');
+    siblings.forEach(function(s) { s.classList.remove('on'); });
+    elem.classList.add('on');
+    sel[group] = val;
+  }
+
+  /* ==================================================================
+     START SCAN (loading state)
+     ================================================================== */
+  function startScan() {
+    var reviews = num('a-reviews');
+    var rating  = num('a-rating');
+    if (reviews === 0 && rating === 0) {
+      el('a-err').style.display = 'block';
+      return;
+    }
+    el('a-err').style.display = 'none';
+
+    // Validate email
+    var email = (el('a-email').value || '').trim();
+    if (!email || email.indexOf('@') === -1) {
+      el('a-err').textContent = 'Please enter a valid email address so we can send your report.';
+      el('a-err').style.display = 'block';
+      return;
+    }
+    el('a-err').textContent = 'Please fill in at least your review count and rating before generating your report.';
+
+    // Show loading
+    el('alseo-form').style.display = 'none';
+    el('alseo-loading').classList.add('show');
+
+    // Cycle loading messages
+    var msgs = [
+      'Analyzing your business presence...',
+      'Checking review signals...',
+      'Comparing local competitors...',
+      'Calculating visibility score...'
+    ];
+    var mi = 0;
+    var msgInterval = setInterval(function() {
+      mi++;
+      if (mi < msgs.length) el('loading-msg').textContent = msgs[mi];
+    }, 400);
+
+    // Run report after delay
+    setTimeout(function() {
+      clearInterval(msgInterval);
+      el('alseo-loading').classList.remove('show');
+      runReport();
+    }, 1600);
+  }
+
+  /* ==================================================================
+     SCORING ENGINE (full original logic)
+     ================================================================== */
+  function runReport() {
+    var name     = el('a-biz').value.trim() || 'Your Business';
+    var city     = el('a-city').value.trim() || 'your area';
+    var industry = getIndustry();
+    var years    = num('a-years');
+    var reviews  = num('a-reviews');
+    var rating   = num('a-rating');
+    var vel      = num('a-vel');
+    var pages    = num('a-pages');
+    var photos   = num('a-photos');
+    var rev      = num('a-rev');
+
+    var gbp       = sel['gbp']       || 'no';
+    var posts     = sel['posts']     || 'no';
+    var responses = sel['responses'] || 'no';
+    var site      = sel['site']      || 'no';
+
+    // ── 1. Review Presence (max 35) ──
+    var s_revCount = reviews >= 200 ? 18 : reviews >= 100 ? 15 : reviews >= 50 ? 11 : reviews >= 25 ? 7 : reviews >= 10 ? 4 : reviews >= 1 ? 2 : 0;
+    var s_rating   = rating >= 4.8 ? 10 : rating >= 4.5 ? 8 : rating >= 4.0 ? 5 : rating >= 3.5 ? 2 : 0;
+    var s_vel      = vel >= 5 ? 7 : vel >= 3 ? 5 : vel >= 1 ? 2 : 0;
+    var cat1 = s_revCount + s_rating + s_vel;
+
+    // ── 2. GBP Optimisation (max 30) ──
+    var s_gbp       = gbp === 'yes' ? 10 : gbp === 'partial' ? 4 : 0;
+    var s_posts     = posts === 'yes' ? 8 : posts === 'sometimes' ? 3 : 0;
+    var s_responses = responses === 'yes' ? 7 : responses === 'some' ? 3 : 0;
+    var s_photos    = photos >= 30 ? 5 : photos >= 15 ? 4 : photos >= 6 ? 2 : 0;
+    var cat2 = s_gbp + s_posts + s_responses + s_photos;
+
+    // ── 3. Website Strength (max 25) ──
+    var s_site  = site === 'yes' ? 13 : site === 'partial' ? 5 : 0;
+    var s_pages = pages >= 6 ? 12 : pages >= 3 ? 8 : pages >= 1 ? 4 : 0;
+    var cat3 = s_site + s_pages;
+
+    // ── 4. Business Maturity (max 10) ──
+    var s_years = years >= 10 ? 10 : years >= 5 ? 8 : years >= 2 ? 5 : years >= 1 ? 2 : 0;
+    var cat4 = s_years;
+
+    var total = cat1 + cat2 + cat3 + cat4;
+    session.score = total;
+    session.intent = predictIntent();
+
+    // ── Grade ──
+    var grade, gradeColor;
+    if      (total >= 85) { grade = 'Strong Visibility';                  gradeColor = '#4caf50'; }
+    else if (total >= 70) { grade = 'Good — Noticeable Gaps Remain';      gradeColor = '#8bc34a'; }
+    else if (total >= 50) { grade = 'Fair — Meaningful Leakage Present';  gradeColor = '#ff9800'; }
+    else if (total >= 30) { grade = 'Poor — Significant Issues Found';    gradeColor = '#ff5722'; }
+    else                  { grade = 'Critical — Immediate Attention Needed'; gradeColor = '#f44336'; }
+
+    // ── Findings ──
+    var findings = [];
+
+    // Reviews
+    if (reviews === 0) {
+      findings.push({level:'bad', title:'No Google Reviews', body:'A business with zero reviews is invisible in competitive local results. Google uses reviews as a primary trust signal — without them, even a fully optimized profile will struggle to rank. This is the highest-priority issue to address.'});
+    } else if (reviews < 20) {
+      findings.push({level:'bad', title:'Very Few Reviews ('+reviews+')', body:'Most businesses ranking in the Google map pack in your category have 50-200+ reviews. At '+reviews+', you are significantly below the threshold where Google treats a profile as authoritative. Actively requesting reviews from satisfied customers is the highest-leverage activity you can do right now.'});
+    } else if (reviews < 50) {
+      findings.push({level:'warn', title:'Review Count Needs Growth ('+reviews+')', body:'You\'re in a workable range, but the top results in most local categories have 3-5x your current count. Steady review acquisition over the next 3-6 months will meaningfully improve your position.'});
+    } else {
+      findings.push({level:'good', title:'Solid Review Volume ('+reviews+')', body:'Your review count is competitive. The priority now is maintaining velocity — new reviews signal to Google that your business is active. Even 2-3 per month makes a measurable difference.'});
+    }
+
+    if (rating > 0 && rating < 4.0) {
+      findings.push({level:'bad', title:'Rating Below 4.0 ('+rating+'★)', body:'A rating below 4.0 is a filter-level problem. Many customers set 4.0 as a minimum threshold before they\'ll even click. Beyond the customer impact, Google also deprioritizes lower-rated businesses in competitive map pack positions.'});
+    } else if (rating >= 4.0 && rating < 4.5) {
+      findings.push({level:'warn', title:'Rating Could Be Stronger ('+rating+'★)', body:'Your rating is acceptable, but businesses with 4.5+ consistently convert better. Proactively asking satisfied customers for reviews is the most reliable way to bring this up.'});
+    } else if (rating >= 4.5) {
+      findings.push({level:'good', title:'Strong Rating ('+rating+'★)', body:'A '+rating+' average is excellent and will convert well. Protect this by continuing to respond to all reviews, including positive ones.'});
+    }
+
+    if (vel === 0) {
+      findings.push({level:'bad', title:'No Recent Review Activity', body:'Review recency matters. Google actively compares how recently businesses have received reviews. A profile with 100 reviews from two years ago will often lose to one with 30 reviews from the past 90 days.'});
+    } else if (vel < 3) {
+      findings.push({level:'warn', title:'Low Review Velocity ('+vel+'/month)', body:'You\'re getting some reviews, which is better than none. Aim for at least 3-4 per month. A simple post-visit follow-up is usually enough to get there.'});
+    }
+
+    // GBP
+    if (gbp === 'no') {
+      findings.push({level:'bad', title:'Google Profile Incomplete', body:'An incomplete Google Business Profile leaves measurable ranking signals unused. A complete profile is the foundation everything else is built on.'});
+    } else if (gbp === 'partial') {
+      findings.push({level:'warn', title:'Profile Partially Complete', body:'Partially filled profiles are treated by Google as lower-priority than fully completed ones. A full audit of every field will often surface easy wins.'});
+    }
+
+    if (posts === 'no') {
+      findings.push({level:'warn', title:'No Regular Google Posts', body:'Businesses that post weekly to their Google profile signal to Google that they are active and engaged. This is one of the cheapest, highest-leverage improvements available.'});
+    } else if (posts === 'sometimes') {
+      findings.push({level:'warn', title:'Inconsistent Google Posts', body:'Occasional posting is better than none, but consistency is what Google rewards. A predictable weekly schedule outperforms sporadic activity.'});
+    } else {
+      findings.push({level:'good', title:'Regular Google Posts', body:'Consistent posting signals an active, engaged business. Keep it up, and vary the content.'});
+    }
+
+    if (responses === 'no') {
+      findings.push({level:'bad', title:'Not Responding to Reviews', body:'Responding to reviews — both positive and negative — is one of the most visible trust signals on your profile. Customers read responses before deciding to call. Every review deserves a reply.'});
+    } else if (responses === 'some') {
+      findings.push({level:'warn', title:'Responding to Some Reviews', body:'Partial engagement is better than none, but inconsistency can hurt perception. Aim to respond to every review within 48 hours.'});
+    } else {
+      findings.push({level:'good', title:'Responding to All Reviews', body:'Consistent review responses signal an active, customer-focused business. For negative reviews, a calm, professional response often matters more to prospective customers than the negative review itself.'});
+    }
+
+    if (photos < 10) {
+      findings.push({level:'bad', title:'Low Photo Count ('+photos+')', body:'Google\'s own data shows that businesses with more photos receive significantly more direction requests and website clicks. Aim for 25+ and add new ones regularly.'});
+    } else if (photos < 25) {
+      findings.push({level:'warn', title:'Photo Count Could Be Higher ('+photos+')', body:'You\'re in a reasonable range. Adding photos consistently — even 2-3 per month — compounds over time.'});
+    } else {
+      findings.push({level:'good', title:'Good Photo Presence ('+photos+')', body:'Strong photo count. Continue adding new photos periodically — Google weighs recency of photos as well as total count.'});
+    }
+
+    // Website
+    if (site === 'no') {
+      findings.push({level:'bad', title:'Website Not Aligned with Local Search', body:'Google cross-references your website against your Google profile. If your site doesn\'t clearly state your services, location, and business name in a consistent way, it weakens your authority in local results.'});
+    } else if (site === 'partial') {
+      findings.push({level:'warn', title:'Website Partially Aligned', body:'Dedicated service pages, a city-level mention in your headers and meta data, and a matching address in the footer all contribute to local ranking.'});
+    }
+
+    if (pages < 2) {
+      findings.push({level:'bad', title:'Too Few Service Pages ('+pages+')', body:'Each service you offer should have its own dedicated page. Without separate pages, you\'re competing for a single generic search term instead of capturing every relevant search.'});
+    } else if (pages < 4) {
+      findings.push({level:'warn', title:'Limited Service Pages ('+pages+')', body:'A few service pages is a start. Expanding to cover each core service individually will help you capture more specific searches.'});
+    } else {
+      findings.push({level:'good', title:'Good Service Page Coverage ('+pages+' pages)', body:'Multiple service pages give Google more signals about your expertise.'});
+    }
+
+    // Maturity
+    if (years < 2) {
+      findings.push({level:'warn', title:'Business Relatively New ('+years+(years===1?' year':' years')+')', body:'A newer business can absolutely outrank older competitors with stronger review presence and a better-optimized profile. Focus on reviews and GBP completion first.'});
+    }
+
+    // Industry-specific benchmark finding
+    var indData = getIndustryData();
+    findings.push({level:'warn', title:'Industry Benchmark', body: indData.benchmark});
+
+    // ── RENDER REPORT ──
+    el('alseo-report').classList.add('show');
+
+    // Title + subtitle (personalized)
+    el('r-title').textContent = name + ' — Visibility Report';
+    if (total < 70) {
+      el('r-sub').textContent = name + ' is currently underperforming in local search for ' + city + '. This is an honest assessment, not a pitch.';
+    } else {
+      el('r-sub').textContent = 'Scored against real local SEO signals for ' + city + '. This is an honest assessment, not a pitch.';
+    }
+
+    // Animated score
+    el('r-score').style.color = gradeColor;
+    el('r-grade').textContent = grade;
+    el('r-grade').style.color = gradeColor;
+
+    // Identity label — makes people see themselves clearly
+    var identityLabel = total < 40
+      ? 'You are currently being overlooked'
+      : total < 70
+      ? 'You are being compared and passed over'
+      : 'You are competitive but not yet dominant';
+    el('r-grade').innerHTML +=
+      '<br><span style="font-size:13px;color:#777;font-weight:400;">' + identityLabel + '</span>';
+    var current = 0;
+    var scoreInterval = setInterval(function() {
+      current++;
+      el('r-score').textContent = current;
+      if (current >= total) clearInterval(scoreInterval);
+    }, 18);
+
+    // Category bars
+    var cats = [
+      {label:'Review Presence',        score:cat1, max:35},
+      {label:'Google Business Profile', score:cat2, max:30},
+      {label:'Website Strength',        score:cat3, max:25},
+      {label:'Business Maturity',       score:cat4, max:10}
+    ];
+    var catHTML = '';
+    cats.forEach(function(c) {
+      var pct = Math.round((c.score / c.max) * 100);
+      var fc = pct >= 75 ? '#4caf50' : pct >= 45 ? '#ff9800' : '#f44336';
+      catHTML +=
+        '<div class="alseo-cat">' +
+          '<div class="alseo-cat-row">' +
+            '<span class="alseo-cat-name">' + c.label + '</span>' +
+            '<span class="alseo-cat-pts">' + c.score + ' / ' + c.max + '</span>' +
+          '</div>' +
+          '<div class="alseo-bar"><div class="alseo-fill" style="width:' + pct + '%;background:' + fc + ';"></div></div>' +
+        '</div>';
+    });
+    el('r-cats').innerHTML = catHTML;
+
+    // Findings
+    var fHTML = '';
+    findings.forEach(function(f) {
+      fHTML +=
+        '<div class="alseo-finding ' + f.level + '">' +
+          '<div class="alseo-finding-title">' + f.title + '</div>' +
+          '<div class="alseo-finding-body">' + f.body + '</div>' +
+        '</div>';
+    });
+    el('r-findings').innerHTML = fHTML;
+
+    // ── COMPETITOR COMPARISON ──
+    if (compData) {
+      var yourReviews = reviews;
+      var compReviews = compData.avgReviews;
+      var yourRating  = rating;
+      var compRating  = parseFloat(compData.avgRating);
+      var maxReviews  = Math.max(yourReviews, compReviews, 1);
+      var visGap      = Math.max(0, Math.round(((compReviews - yourReviews) / Math.max(compReviews,1)) * 100));
+
+      // Build comparison bars
+      var yrw  = Math.round((yourReviews / maxReviews) * 100);
+      var crw  = Math.round((compReviews  / maxReviews) * 100);
+      var yrtw = Math.round((yourRating / 5) * 100);
+      var crtw = Math.round((compRating  / 5) * 100);
+
+      var compHTML =
+        '<hr class="alseo-divider">' +
+        '<div class="comp-wrap">' +
+          '<div class="comp-title">Your Position vs Local Competitors</div>' +
+          '<div class="comp-row">' +
+            '<div class="comp-label">Review Volume</div>' +
+            '<div class="comp-bars">' +
+              '<div class="comp-them" style="width:' + crw + '%"></div>' +
+              '<div class="comp-you" style="width:' + yrw + '%"></div>' +
+            '</div>' +
+            '<div class="comp-meta"><span>You: ' + yourReviews + '</span><span>Competitor avg: ' + compReviews + '</span></div>' +
+          '</div>' +
+          '<div class="comp-row">' +
+            '<div class="comp-label">Rating Strength</div>' +
+            '<div class="comp-bars">' +
+              '<div class="comp-them" style="width:' + crtw + '%"></div>' +
+              '<div class="comp-you" style="width:' + yrtw + '%"></div>' +
+            '</div>' +
+            '<div class="comp-meta"><span>You: ' + yourRating + '&#9733;</span><span>Competitor avg: ' + compRating + '&#9733;</span></div>' +
+          '</div>';
+
+      if (visGap > 0) {
+        compHTML += '<div class="comp-gap">You are currently <strong>' + visGap + '% behind</strong> top competitors in review presence. ' +
+          'Businesses in your position typically lose <strong>20-40% of potential customers</strong> to competitors showing up ahead of them.</div>';
+      }
+
+      // 3-competitor named table
+      if (compData.competitors && compData.competitors.length) {
+        var maxRev = Math.max.apply(null, compData.competitors.map(function(c){return c.reviews;}));
+        maxRev = Math.max(maxRev, yourReviews, 1);
+
+        compHTML += '<p style="font-size:12px;color:#444;margin:20px 0 8px;">These are the businesses currently getting your calls:</p>';
+        compHTML += '<table class="comp-table"><thead><tr><th>#</th><th>Business</th><th>Reviews</th><th>Rating</th></tr></thead><tbody>';
+
+        compData.competitors.forEach(function(c, i) {
+          var barPct = Math.round((c.reviews / maxRev) * 100);
+          var rankClass = 'r' + (i + 1);
+          compHTML +=
+            '<tr>' +
+              '<td><span class="comp-rank ' + rankClass + '">' + (i + 1) + '</span></td>' +
+              '<td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + c.name + '</td>' +
+              '<td>' + c.reviews +
+                '<span class="comp-bar-sm"><span class="comp-bar-sm-fill" style="width:' + barPct + '%"></span></span>' +
+              '</td>' +
+              '<td>' + c.rating + '&#9733;</td>' +
+            '</tr>';
+        });
+
+        // Add "You" row at bottom
+        var yourBarPct = Math.round((yourReviews / maxRev) * 100);
+        compHTML +=
+          '<tr class="you-row">' +
+            '<td><span class="comp-rank" style="background:#333;color:#c9a050;">You</span></td>' +
+            '<td>' + name + '</td>' +
+            '<td>' + yourReviews +
+              '<span class="comp-bar-sm"><span class="comp-bar-sm-fill" style="width:' + yourBarPct + '%"></span></span>' +
+            '</td>' +
+            '<td>' + yourRating + '&#9733;</td>' +
+          '</tr>';
+        compHTML += '</tbody></table>';
+      }
+
+      compHTML += '</div>';
+      el('r-comparison').innerHTML = compHTML;
+
+      // ── COMPETITOR BREAKDOWN + OUTRANK PLAN ──
+      var top = compData.topCompetitor;
+      var bdHTML =
+        '<div class="alseo-finding bad">' +
+          '<div class="alseo-finding-title">' + top.name + ' is currently outperforming you</div>' +
+          '<div class="alseo-finding-body">' +
+            top.rating + '&#9733; average &middot; ' + top.reviews + ' reviews<br>' +
+            'This business is winning the calls and clicks your business should be getting.' +
+          '</div>' +
+        '</div>';
+
+      // Why they rank higher
+      var reasons = [];
+      if (top.reviews > reviews) reasons.push('They have ' + Math.round(top.reviews / Math.max(reviews, 1)) + 'x more reviews');
+      if (parseFloat(top.rating) > rating) reasons.push('Their rating is higher (' + top.rating + ' vs yours at ' + rating + ')');
+      if (vel < 3) reasons.push('They are likely getting more recent reviews consistently');
+      if (photos < 20) reasons.push('Their profile is more active with photos and updates');
+      if (reasons.length) {
+        bdHTML += '<div class="alseo-finding warn"><div class="alseo-finding-title">Why They Rank Higher</div><div class="alseo-finding-body">';
+        reasons.forEach(function(r) { bdHTML += '&bull; ' + r + '<br>'; });
+        bdHTML += '</div></div>';
+      }
+
+      // Outrank plan
+      var steps = [];
+      if (reviews < compData.avgReviews) steps.push('Increase review count to at least ' + compData.avgReviews + '+');
+      if (rating < 4.5) steps.push('Improve rating to 4.5+ through proactive review requests');
+      if (vel < 3) steps.push('Generate 3-5 new reviews per month consistently');
+      if (photos < 25) steps.push('Upload 15+ new photos to signal activity');
+      if (pages < 4) steps.push('Create dedicated service pages for each offering');
+      if (steps.length) {
+        bdHTML += '<div class="alseo-finding good"><div class="alseo-finding-title">Your Outrank Plan</div><div class="alseo-finding-body">';
+        steps.forEach(function(s, i) { bdHTML += (i + 1) + '. ' + s + '<br>'; });
+        bdHTML += '<br><strong>These are the specific changes that will move your ranking.</strong></div></div>';
+      }
+
+      el('r-competitor-breakdown').innerHTML =
+        '<hr class="alseo-divider"><div class="alseo-section-label">Competitor Analysis</div>' + bdHTML;
+    }
+
+    // ── MARKET DEMAND BADGE ──
+    var monthlySearches = getMonthlyDemand(industry);
+    var topShare = Math.round(monthlySearches * 0.70); // top 3 get ~70% of clicks
+    var demandHTML =
+      '<div class="demand-badge">' +
+        '<span class="demand-pulse"></span>' +
+        '<span>~<strong>' + monthlySearches.toLocaleString() + '</strong> people searched for this service in your area last month &mdash; the top 3 results captured ~' + topShare + ' of those clicks</span>' +
+      '</div>';
+    el('r-findings').innerHTML += demandHTML;
+
+    // ── REVENUE (industry-based engine) ──
+    var missedPerMonth = getMissedPerMonth(industry, total);
+    var missedRounded  = Math.round(missedPerMonth);
+    var monthlyLoss    = rev > 0 ? Math.round(missedPerMonth * rev) : 0;
+    // Store on session so textMeResults() sends rich financial payload
+    session.estimatedMonthlyLoss = monthlyLoss;
+    session.missedCustomers      = missedRounded;
+    session.demandEstimate       = monthlySearches;
+    if (rev > 0 && missedRounded > 0) {
+      el('r-revenue').innerHTML =
+        '<hr class="alseo-divider">' +
+        '<div class="alseo-revenue">' +
+          '<div class="alseo-rev-lbl">Estimated Lost Revenue Per Month</div>' +
+          '<div class="alseo-rev-num">$' + monthlyLoss.toLocaleString() + '</div>' +
+          '<div class="alseo-rev-caption"><strong>This is revenue currently going to competitors.</strong><br>' +
+          'Based on ~' + missedRounded + ' missed ' + (industry !== 'other' ? industry : 'customer') + ' inquiries/month at $' + rev.toLocaleString() + ' each &mdash; calculated from ' + industry + ' industry benchmarks at your visibility level.<br>' +
+          '<em>Estimate only. Individual results vary.</em></div>' +
+        '</div>';
+    } else if (missedRounded > 0) {
+      // No customer value entered — show missed count without dollar amount
+      el('r-revenue').innerHTML =
+        '<hr class="alseo-divider">' +
+        '<div class="alseo-revenue">' +
+          '<div class="alseo-rev-lbl">Estimated Missed Inquiries Per Month</div>' +
+          '<div class="alseo-rev-num">~' + missedRounded + '</div>' +
+          '<div class="alseo-rev-caption">Based on ' + industry + ' industry benchmarks at your visibility level.<br>Enter your average customer value above to see the dollar impact.</div>' +
+        '</div>';
+    }
+
+    // ── GROWTH TIMELINE ──
+    var monthsToCompete, growthRate, improveFactor;
+    if      (total < 40) { monthsToCompete = '4-6 months'; growthRate = '2-3x increase in visibility'; improveFactor = 2.5; }
+    else if (total < 60) { monthsToCompete = '2-4 months'; growthRate = '50-120% increase'; improveFactor = 1.8; }
+    else if (total < 80) { monthsToCompete = '1-3 months'; growthRate = '20-50% increase'; improveFactor = 1.4; }
+    else                 { monthsToCompete = 'Already competitive'; growthRate = 'Incremental gains'; improveFactor = 1.2; }
+
+    var tlHTML =
+      '<hr class="alseo-divider">' +
+      '<div class="timeline-wrap">' +
+        '<div class="timeline-title">Projected Outcome</div>' +
+        '<div class="timeline-box timeline-bad">' +
+          '<strong>If Nothing Changes</strong><br><br>' +
+          'Your visibility will likely remain below competitors. Over time, businesses with more reviews and activity will continue to pull ahead.<br><br>' +
+          '<strong>You will continue losing potential customers each month.</strong>' +
+        '</div>' +
+        '<div class="timeline-box timeline-good">' +
+          '<strong>If You Fix These Issues</strong><br><br>' +
+          'You can become competitive within <strong>' + monthsToCompete + '</strong>.<br>' +
+          'Expected outcome: <strong>' + growthRate + '</strong><br><br>' +
+          'This typically results in more calls, more clicks, and more booked customers.' +
+        '</div>';
+
+    if (rev > 0) {
+      var futureRev = Math.round(rev * improveFactor * 10);
+      tlHTML +=
+        '<div class="timeline-box timeline-good">' +
+          '<strong>Projected Revenue Opportunity</strong><br><br>' +
+          'With improved visibility, your business could generate an additional:<br><br>' +
+          '<strong>$' + futureRev.toLocaleString() + '+ per month</strong>' +
+        '</div>';
+    }
+
+    tlHTML +=
+        '<div class="timeline-box">' +
+          'Most businesses wait too long to fix this. The ones that act early are the ones that dominate their local results.' +
+        '</div>' +
+      '</div>';
+    el('r-timeline').innerHTML = tlHTML;
+
+    // ── AI ANALYSIS (backend call) ──
+    if (CONFIG.apiBase) {
+      el('r-ai-analysis').innerHTML = '<div class="alseo-finding"><div class="alseo-finding-body">Generating personalized analysis...</div></div>';
+      fetch(CONFIG.apiBase + '/api/analyze', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          score: total, reviews: reviews, rating: rating,
+          industry: industry, competitors: compData
+        })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.analysis) {
+          el('r-ai-analysis').innerHTML =
+            '<hr class="alseo-divider">' +
+            '<div class="alseo-section-label">AI Analysis</div>' +
+            '<div class="alseo-finding"><div class="alseo-finding-body">' + data.analysis.replace(/\n/g,'<br>') + '</div></div>';
+        }
+      })
+      .catch(function() { el('r-ai-analysis').innerHTML = ''; });
+    }
+
+    // ── BOOKING SECTION ──
+    var userType = predictIntent();
+    var urgencyLine, toneLine;
+    if      (total < 40) { urgencyLine = "Right now, you're almost invisible in local search."; toneLine = "This is fixable — but waiting makes it worse."; }
+    else if (total < 60) { urgencyLine = "You're showing up, but competitors are getting picked over you."; toneLine = "Small changes here can create immediate impact."; }
+    else if (total < 80) { urgencyLine = "You're competitive, but leaving opportunities on the table."; toneLine = "A few targeted improvements could push you to the top."; }
+    else                 { urgencyLine = "You're in a strong position already."; toneLine = "Now it's about maintaining and expanding your lead."; }
+
+    // Dynamic booking message based on intent
+    var bookingMsg = '';
+    if (userType === 'high') bookingMsg = 'You\'ve already seen enough to know this matters.';
+    else if (userType === 'medium') bookingMsg = 'If this feels off, you\'re probably right.';
+    else bookingMsg = 'Most people don\'t realize this until it\'s pointed out.';
+
+    // Suggested timing
+    var suggestedTime;
+    if      (total < 40) suggestedTime = 'today or tomorrow';
+    else if (total < 60) suggestedTime = 'within the next 2-3 days';
+    else if (total < 80) suggestedTime = 'this week';
+    else                 suggestedTime = 'at your convenience';
+
+    // Time-based urgency
+    var hour = new Date().getHours();
+    var timeMsg = '';
+    if      (hour < 12) timeMsg = 'Most people who see this wait — and their competitors don\'t.';
+    else if (hour < 17) timeMsg = 'Most people who see this wait — and their competitors don\'t.';
+    else                timeMsg = 'Most people who see this wait — and their competitors don\'t.';
+
+    // Pre-fill Calendly link
+    var leadName  = el('a-name').value || '';
+    var leadEmail = el('a-email').value || '';
+    var bookingLink = CONFIG.calendlyURL +
+      '?name=' + encodeURIComponent(leadName) +
+      '&email=' + encodeURIComponent(leadEmail);
+
+    // Pain stack — weekly hits harder than monthly
+    var weeklyLoss = monthlyLoss > 0 ? Math.round(monthlyLoss / 4) : 0;
+
+    var bkHTML =
+      '<hr class="alseo-divider">' +
+      '<div class="timeline-wrap">' +
+        '<div class="timeline-title">What Happens Next</div>' +
+        '<div class="timeline-box"><strong>' + urgencyLine + '</strong><br><br>' + toneLine + '</div>' +
+        '<div class="timeline-box">' + indData.planIntro + '</div>' +
+      '</div>' +
+      '<div class="alseo-cta">' +
+        '<div class="alseo-cta-title">Here\'s what\'s costing you customers right now</div>' +
+        '<div class="alseo-cta-body">' +
+
+          // Pain stack (monthly + weekly)
+          (weeklyLoss > 0
+            ? '<strong>You\'re currently losing ~$' + monthlyLoss.toLocaleString() + '/month.</strong><br>' +
+              'That\'s about $' + weeklyLoss.toLocaleString() + ' every week this stays unfixed.<br><br>'
+            : '') +
+
+          // Reality trigger
+          'This isn\'t a future problem — this is already happening every day someone searches and doesn\'t find you.<br><br>' +
+
+          // "You vs them" framing
+          'Right now, your competitors are getting the calls that should be going to you.<br><br>' +
+
+          // Ease reassurance
+          'This isn\'t complicated. In most cases, it\'s 2–3 key fixes that create the shift.<br><br>' +
+
+          // Inevitability — "fixable but not if it stays like this"
+          'Based on what I\'m seeing, this is fixable — but not if it stays like this.<br><br>' +
+
+          // Intent-based personalisation
+          bookingMsg +
+
+          // Social proof (no testimonials needed)
+          '<br><br><span style="font-size:12px;opacity:.7;">Most businesses in your position don\'t realize this until it\'s pointed out.</span>' +
+
+          // Fix 10: "You can fix this" — shifts from diagnosis to action
+          'This is not a long-term rebuild — it\'s a few key fixes done correctly.<br><br>' +
+
+          // Fix 9: Offer framing (bold + reassuring)
+          '<strong>Most businesses start by fixing the core issues first — then decide if they want ongoing help.</strong>' +
+
+          (timeMsg ? '<br><br><strong>' + timeMsg + '</strong>' : '') +
+        '</div>' +
+
+        // Micro-commit button — personalised with business name
+        '<button class="alseo-cta-link" onclick="ALSEO.preBook()">' +
+          'Show Me What To Fix For ' + (el('a-biz').value.trim() || 'My Business') +
+        '</button>' +
+
+        // Authority line
+        '<div style="font-size:11px;margin-top:10px;color:rgba(0,0,0,.45);">' +
+          'I\'ll pull your business up live — you don\'t need to prepare anything.' +
+        '</div>' +
+
+      '</div>' +
+      '<div style="text-align:center;margin-top:16px;">' +
+        '<span style="font-size:13px;color:#777;">Prefer to just call? </span>' +
+        '<a href="tel:' + CONFIG.phone + '" style="color:#c9a050;font-size:13px;">' + CONFIG.phoneDisplay + '</a>' +
+      '</div>';
+
+    // "Text Me My Results" button (only shown if phone was entered)
+    if (el('a-phone').value) {
+      bkHTML +=
+        '<div style="margin-top:12px;">' +
+          '<button onclick="ALSEO.textMeResults()" class="alseo-btn ghost" style="font-size:13px;padding:12px;">' +
+            '&#128241; Text Me My Results' +
+          '</button>' +
+        '</div>';
+    }
+
+    // Calendly embed
+    bkHTML +=
+      '<div class="calendar-wrap">' +
+        '<div class="calendar-header">' +
+          '<div class="calendar-title">Book Your Visibility Review</div>' +
+          '<div class="calendar-sub">Choose a time below — I\'ll pull up your profile live.</div>' +
+        '</div>' +
+        '<iframe src="' + CONFIG.calendlyURL + '?hide_event_type_details=1&hide_gdpr_banner=1" ' +
+          'width="100%" height="630" frameborder="0" loading="lazy"></iframe>' +
+      '</div>';
+
+    el('r-booking').innerHTML = bkHTML;
+    session.viewedBooking = true;
+
+    // ── FIX 3: High-intent SMS trigger — fires Zapier immediately ──
+    if (session.intent === 'high') {
+      sendTrackingData();
+    }
+
+    // Scroll to report
+    el('alseo-report').scrollIntoView({behavior:'smooth', block:'start'});
+
+    // ── SEND LEAD DATA ──
+    sendLead(total, industry, reviews, rating, vel, pages, photos, rev, monthlyLoss, missedPerMonth, monthlySearches);
+
+    // ── HESITATION NUDGE (10s) ──
+    setTimeout(function() {
+      if (!session.clickedBooking) {
+        var nudge = document.createElement('div');
+        nudge.className = 'timeline-box pulse-glow';
+        nudge.style.marginTop = '16px';
+        nudge.innerHTML = '<strong>' + getVariant('urgency') + '</strong>';
+        el('r-booking').appendChild(nudge);
+      }
+    }, 10000);
+
+    // ── FINAL PUSH (20s) — late-stage hesitation killer ──
+    setTimeout(function() {
+      if (!session.clickedBooking) {
+        var finalPush = document.createElement('div');
+        finalPush.className = 'timeline-box';
+        finalPush.style.marginTop = '12px';
+        finalPush.style.borderLeft = '2px solid #f44336';
+        finalPush.innerHTML = '<strong>Most businesses at your level don\'t fix this — that\'s why their competitors keep winning.</strong>';
+        el('r-booking').appendChild(finalPush);
+      }
+    }, 20000);
+  }
+
+  /* ==================================================================
+     LEAD CAPTURE + TRACKING
+     ================================================================== */
+  function sendLead(score, industry, reviews, rating, vel, pages, photos, rev, monthlyLoss, missedPerMonth, demandEstimate) {
+    var payload = {
+      name:     el('a-name').value || '',
+      email:    el('a-email').value || '',
+      phone:    el('a-phone').value || '',
+      business: el('a-biz').value || '',
+      city:     el('a-city').value || '',
+      industry: industry,
+      score:    score,
+      reviews:  reviews,
+      rating:   rating,
+      velocity: vel,
+      pages:    pages,
+      photos:   photos,
+      customerValue:          rev,
+      estimatedMonthlyLoss:   monthlyLoss   || 0,
+      missedCustomers:        missedPerMonth || 0,
+      demandEstimate:         demandEstimate || 0,
+      priorityLevel:          (score < 40 || monthlyLoss > 5000) ? 'high' : score < 70 ? 'medium' : 'low',
+      googleAutofill:         lockedByGoogle || false,
+      gbp:       sel['gbp'] || 'no',
+      posts:     sel['posts'] || 'no',
+      responses: sel['responses'] || 'no',
+      site:      sel['site'] || 'no',
+      intent:    session.intent,
+      scrollDepth: session.scrollDepth,
+      timeOnPage:  Math.round((Date.now() - session.startTime) / 1000),
+      timestamp:   new Date().toISOString(),
+      abVariants: abAssignments
+    };
+
+    // Send to backend API
+    if (CONFIG.apiBase) {
+      fetch(CONFIG.apiBase + '/api/lead', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).catch(function(){});
+    }
+
+    // Send to Zapier webhook (with retry on failure)
+    if (CONFIG.zapierWebhook) {
+      var zapBody = JSON.stringify(payload);
+      fetch(CONFIG.zapierWebhook, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: zapBody
+      }).catch(function() {
+        // Retry once after 2 seconds
+        setTimeout(function() {
+          fetch(CONFIG.zapierWebhook, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: zapBody
+          }).catch(function(){});
+        }, 2000);
+      });
+    }
+  }
+
+  function sendTrackingData() {
+    var payload = {
+      email:          el('a-email') ? el('a-email').value : '',
+      score:          session.score,
+      intent:         session.intent,
+      scrollDepth:    session.scrollDepth,
+      viewedBooking:  session.viewedBooking,
+      clickedBooking: session.clickedBooking,
+      hesitated:      session.hesitated,
+      timeOnPage:     Math.round((Date.now() - session.startTime) / 1000),
+      abVariants:     abAssignments
+    };
+
+    var url = CONFIG.apiBase ? CONFIG.apiBase + '/api/track' : CONFIG.zapierWebhook;
+    if (url) {
+      // Use sendBeacon for reliability on page unload
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, JSON.stringify(payload));
+      } else {
+        fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        }).catch(function(){});
+      }
+    }
+  }
+
+  function trackBooking() {
+    session.clickedBooking = true;
+    recordWin('cta');
+    recordWin('urgency');
+    sendTrackingData();
+  }
+
+  /* ==================================================================
+     RESET
+     ================================================================== */
+  function resetForm() {
+    // Last-chance recovery — only fires if they viewed the report but didn't book
+    if (session.viewedBooking && !session.clickedBooking) {
+      var go = window.confirm('Before you go — most businesses fix this after seeing it.\n\nIf you want help, just book a time.');
+      if (go) {
+        window.open(CONFIG.calendlyURL, '_blank');
+        return;
+      }
+    }
+    el('alseo-form').style.display = 'block';
+    el('alseo-report').classList.remove('show');
+    el('r-comparison').innerHTML = '';
+    el('r-revenue').innerHTML = '';
+    el('r-ai-analysis').innerHTML = '';
+    el('r-timeline').innerHTML = '';
+    el('r-competitor-breakdown').innerHTML = '';
+    el('r-booking').innerHTML = '';
+    sel = {};
+    compData = null;
+    session.score = null;
+    session.viewedBooking = false;
+    session.clickedBooking = false;
+    document.querySelectorAll('.alseo-radio').forEach(function(r) { r.classList.remove('on'); });
+    el('alseo-form').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  /* ==================================================================
+     INIT
+     ================================================================== */
+  function init() {
+    // Apply A/B headline variant
+    if (CONFIG.abEnabled) {
+      var h = el('main-headline');
+      if (h) h.textContent = getVariant('headline');
+    }
+    // Google Places
+    if (CONFIG.googlePlaces) {
+      if (window.google) initGoogleAutocomplete();
+      else window.addEventListener('load', initGoogleAutocomplete);
+    }
+  }
+
+  /* ==================================================================
+     PUBLIC API (exposed to onclick handlers)
+     ================================================================== */
+  // ── preBook: micro-commitment step before Calendly opens ──────────
+  function preBook() {
+    session.intent = 'high';
+    sendTrackingData();
+    recordWin('cta');
+
+    // Show inline commitment overlay instead of native confirm()
+    // (native confirm is blocked in some iframes/browsers)
+    var overlay = document.createElement('div');
+    overlay.id = 'alseo-prebook-overlay';
+    overlay.style.cssText = [
+      'position:fixed','inset:0','background:rgba(0,0,0,.85)',
+      'display:flex','align-items:center','justify-content:center',
+      'z-index:9999','padding:20px'
+    ].join(';');
+
+    overlay.innerHTML =
+      '<div style="background:#161616;border:1px solid #262626;border-radius:4px;max-width:420px;width:100%;padding:32px;text-align:center;">' +
+        '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#c9a050;margin-bottom:12px;">AlignmentSEO</div>' +
+        '<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:12px;line-height:1.3;">' +
+          'I\'ll show you exactly what I\'d fix on your business first.' +
+        '</div>' +
+        '<div style="font-size:13px;color:#777;margin-bottom:24px;line-height:1.6;">' +
+          'This takes about 10–15 minutes.<br>I\'ll pull everything up live — you don\'t need to prepare anything.' +
+        '</div>' +
+        '<button id="alseo-prebook-yes" style="width:100%;background:#c9a050;color:#000;border:none;padding:14px;font-size:15px;font-weight:700;border-radius:3px;cursor:pointer;margin-bottom:10px;">' +
+          'Yes — Book My Review' +
+        '</button>' +
+        '<button id="alseo-prebook-no" style="width:100%;background:none;border:none;color:#555;font-size:13px;cursor:pointer;padding:8px;">' +
+          'Not right now' +
+        '</button>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('alseo-prebook-yes').onclick = function() {
+      trackBooking();
+      document.body.removeChild(overlay);
+      window.open(CONFIG.calendlyURL, '_blank');
+    };
+    document.getElementById('alseo-prebook-no').onclick = function() {
+      session.hesitated = true;
+      sendTrackingData();
+      document.body.removeChild(overlay);
+    };
+  }
+
+  // ── textMeResults: sends FULL lead payload (not just tracking) ────
+  function textMeResults() {
+    var phone = (el('a-phone').value || '').trim();
+    if (!phone) {
+      alert('Enter your phone number in the form to receive your results by text.');
+      return;
+    }
+    // Send full lead payload so Zapier has everything needed to send a rich SMS
+    sendLead(
+      session.score,
+      el('a-type').value,
+      num('a-reviews'),
+      num('a-rating'),
+      num('a-vel'),
+      num('a-pages'),
+      num('a-photos'),
+      num('a-rev'),
+      session.estimatedMonthlyLoss,
+      session.missedCustomers,
+      session.demandEstimate
+    );
+    // Update button to confirm
+    var btn = document.querySelector('[onclick="ALSEO.textMeResults()"]');
+    if (btn) {
+      btn.textContent = '\u2713 Results sent to ' + phone;
+      btn.disabled = true;
+      btn.style.color = '#4caf50';
+    }
+  }
+
+  window.ALSEO = {
+    pick:           pick,
+    startScan:      startScan,
+    reset:          resetForm,
+    trackBooking:   trackBooking,
+    clearBizSearch: clearBizSearch,
+    textMeResults:  textMeResults,
+    preBook:        preBook
+  };
+
+  // Run init
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+}());
+</script>
