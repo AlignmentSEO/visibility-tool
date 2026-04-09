@@ -569,6 +569,29 @@
   /* ==================================================================
      HELPERS
      ================================================================== */
+  function sendTrackingData() {
+    try {
+      var s = session.score || 0;
+      var pl = s < 40 ? 'high' : s < 70 ? 'medium' : 'low';
+      navigator.sendBeacon(CONFIG.zapierWebhook, new Blob([JSON.stringify({
+        email: el('a-email') ? el('a-email').value : '',
+        business: el('a-biz') ? el('a-biz').value : '',
+        city: el('a-city') ? el('a-city').value : '',
+        industry: el('a-type') ? el('a-type').value : '',
+        rating: el('a-rating') ? el('a-rating').value : '',
+        reviews: el('a-reviews') ? el('a-reviews').value : '',
+        score: s,
+        priorityLevel: pl,
+        intent: session.intent,
+        viewedBooking: session.viewedBooking,
+        clickedBooking: session.clickedBooking,
+        hesitated: session.hesitated,
+        estimatedMonthlyLoss: session.estimatedMonthlyLoss,
+        missedCustomers: session.missedCustomers,
+        demandEstimate: session.demandEstimate
+      })], {type: 'application/json'}));
+    } catch(e) {}
+  }
   function el(id) { return document.getElementById(id); }
   function num(id) { return parseFloat(el(id).value) || 0; }
 
