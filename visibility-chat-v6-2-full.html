@@ -1,0 +1,1582 @@
+<!--
+  AlignmentSEO Visibility Chat MVP v6.2 Phase A
+  ====================================================================
+  BUILT FROM:   2026-05-26-Visibility-Chat-MVP-v6.1.html (frozen, unchanged)
+  ROLLBACK:     republish v6.1 HTML into the same Squarespace Code Block.
+                v6.1 file remains intact on disk as the rollback baseline.
+  DATE:         2026-05-26
+  SCOPE:        Phase A only — Hotel industry, combined contact step,
+                contact preference + phone capture, four-block result
+                presentation. No scoring changes. No API. No routing.
+
+  Phase A changes:
+    1. Hotel added to INDUSTRY_CHOICES and industryBenchmarks.
+       Hotel does NOT trigger isHospitality() — no menu question.
+    2. askEmail + askName replaced with combined askContact() step.
+       Captures: name, email, contactPreference (Call/Text/Email/
+       Let me pick a time), and phone (conditional on Call or Text).
+    3. Zapier payload contact object now includes contactPreference.
+    4. Result card restructured into four blocks:
+       Score → What is working → What needs attention → Next step.
+    5. CSS additions: chip.selected, result-block, block-label,
+       block-good, block-notgood, contact-form, contact-pref-label,
+       contact-phone-row.
+    6. advance() total updated: non-hospitality 13, hospitality 14
+       (one combined contact step replaces two separate email+name steps).
+
+  No changes to: scoring formulas, grade cutoffs, Calendly URL,
+  Vercel API endpoint, Zapier webhook URL, branches, GBP verification,
+  DOM structure, edit behavior, verified-value chip, "Not sure"
+  handling, encoding hygiene, topFinding logic, CSS design tokens.
+
+  -- v6.1 header preserved below for audit reference --
+  AlignmentSEO Visibility Chat MVP v6.1 (Phase 2.9 Compression + Specificity Pass)
+  PATCHED FROM: 2026-05-26-Visibility-Chat-MVP-v6.html
+  ROLLBACK:     republish v6 HTML into the same Squarespace Code Block.
+                v6 file remains intact on disk as the rollback baseline.
+
+  Phase 2.9 changes (compression + specificity, no new features):
+
+    1. Secondary cleanup now carries one grounded detail instead of
+       category-only abstraction. Single-secondary single-gap reads
+       as "X is the next cleanup item: <specific>." Multi-secondary
+       reads as "Also worth attention: <specific from first>, and
+       <second category>." One concrete detail, never stacked.
+    2. Opener selection pressure increased. New "soft spot" variant
+       fires for mature businesses (Y>=10) with mid scores (50-69),
+       producing "X is the soft spot in an otherwise long-running
+       profile: ..." instead of the generic "main drag" line.
+       Selection now keys off score band AND maturity, so back-to-back
+       scans differentiate by who the business actually is.
+    3. Top-tier reads gain a subtle leverage watch-item. Score 85+
+       no-gap reads no longer rubber-stamp; one specific next-axis
+       observation is appended (photo cadence depth, service-page
+       depth, or review freshness based on which input is lowest
+       among the strong-tier signals).
+    4. Final chatbot-energy sweep on the post-result message.
+       "we will walk through the report together" replaced with
+       "the 30-min review covers it in detail." No first-person
+       plural. Direct.
+
+  No changes to: scoring formulas, grade cutoffs, Zapier payload,
+  Calendly URL, branches, question set, CSS, DOM, edit behavior,
+  verified-value chip, "Not sure" handling, encoding hygiene,
+  critical-finding language, maturity sentences.
+
+  ROLLBACK to v6 is one file republish away.
+-->
+
+<style>
+.alchat{background:#0d0d0d;color:#fff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;padding:32px 20px 120px;box-sizing:border-box;min-height:80vh;position:relative}
+.alchat *,.alchat *::before,.alchat *::after{box-sizing:border-box}
+
+.alchat-eyebrow{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:#c9a050;margin-bottom:8px;text-align:center}
+.alchat-title{font-size:20px;font-weight:700;text-align:center;margin:0 0 24px;color:#fff}
+
+.alchat-stream{display:flex;flex-direction:column;gap:10px;padding-bottom:24px}
+.alchat-msg{max-width:85%;padding:12px 16px;border-radius:14px;font-size:15px;line-height:1.5;animation:alchat-in .35s ease-out}
+.alchat-bot{background:#161616;border:1px solid #1f1f1f;color:#e8e8e8;border-bottom-left-radius:4px;align-self:flex-start}
+.alchat-user{background:#c9a050;color:#0d0d0d;border-bottom-right-radius:4px;align-self:flex-end;font-weight:600;position:relative}
+.alchat-system{align-self:center;background:transparent;color:#555;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:6px 0}
+
+.alchat-encourage{align-self:center;background:transparent;color:#9c8856;font-size:12px;letter-spacing:.6px;padding:4px 0 2px;font-style:italic;animation:alchat-in .4s ease-out}
+
+@keyframes alchat-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.alchat-user.editable{cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;padding-right:30px}
+.alchat-user.editable:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(201,160,80,.18)}
+.alchat-user.editable::before{
+  content:'\270E';
+  position:absolute;top:50%;right:10px;transform:translateY(-50%);
+  color:#0d0d0d;opacity:.45;font-size:13px;line-height:1;font-weight:400;
+  transition:opacity .15s ease;
+}
+.alchat-user.editable:hover::before{opacity:.85}
+.alchat-user.editable.coachmark::after{
+  content:'tap to edit';
+  position:absolute;top:-9px;right:8px;background:#c9a050;color:#0d0d0d;
+  font-size:9px;letter-spacing:1.2px;text-transform:uppercase;
+  padding:2px 6px;border-radius:8px;font-weight:700;
+  animation:alchat-coach 2.6s ease-out infinite;
+}
+@keyframes alchat-coach{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+
+.alchat-user.editing{background:#1a1500;color:#c9a050;border:1px solid #c9a050;font-weight:400;cursor:default;padding-right:16px}
+.alchat-user.editing::before{display:none}
+.alchat-user.just-edited{animation:alchat-flash .9s ease-out}
+@keyframes alchat-flash{0%{box-shadow:0 0 0 0 rgba(201,160,80,.6)}60%{box-shadow:0 0 0 8px rgba(201,160,80,0)}100%{box-shadow:0 0 0 0 rgba(201,160,80,0)}}
+
+.alchat-edit-input{width:100%;background:#0d0d0d;border:1px solid #c9a050;color:#fff;padding:8px 10px;font-size:14px;border-radius:6px;-webkit-appearance:none;appearance:none;margin-bottom:6px}
+.alchat-edit-input:focus{outline:none;border-color:#d4ad5f}
+.alchat-edit-row{display:flex;gap:6px;margin-top:6px}
+.alchat-edit-save,.alchat-edit-cancel{flex:1;padding:7px 8px;font-size:12px;font-weight:700;letter-spacing:.4px;border-radius:6px;cursor:pointer;border:none}
+.alchat-edit-save{background:#c9a050;color:#0d0d0d}
+.alchat-edit-cancel{background:#161616;color:#888;border:1px solid #2a2a2a}
+.alchat-edit-choices{display:flex;flex-wrap:wrap;gap:5px}
+.alchat-edit-choice{flex:1 1 auto;background:#161616;border:1px solid #2a2a2a;color:#ccc;padding:6px 10px;font-size:12px;border-radius:14px;cursor:pointer}
+.alchat-edit-choice.current{background:#1a1500;border-color:#c9a050;color:#c9a050}
+.alchat-edit-choice:hover{border-color:#c9a050;color:#c9a050}
+
+.alchat-typing{align-self:flex-start;background:#161616;border:1px solid #1f1f1f;padding:14px 18px;border-radius:14px;border-bottom-left-radius:4px;display:inline-flex;gap:5px}
+.alchat-typing span{width:6px;height:6px;background:#777;border-radius:50%;animation:alchat-dot 1.2s infinite ease-in-out}
+.alchat-typing span:nth-child(2){animation-delay:.2s}
+.alchat-typing span:nth-child(3){animation-delay:.4s}
+@keyframes alchat-dot{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+.alchat-dock{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(13,13,13,0) 0%,#0d0d0d 30%);padding:18px 0 0;margin-top:10px}
+.alchat-input-row{display:flex;gap:8px}
+.alchat-input{flex:1;background:#161616;border:1px solid #262626;color:#fff;padding:14px 14px;font-size:15px;border-radius:8px;-webkit-appearance:none;appearance:none}
+.alchat-input:focus{outline:none;border-color:#c9a050}
+.alchat-input::placeholder{color:#5a5a5a;opacity:1}
+
+.alchat-send{background:#c9a050;color:#0d0d0d;border:none;padding:0 18px;font-size:14px;font-weight:700;letter-spacing:.5px;border-radius:8px;cursor:pointer;min-width:64px}
+.alchat-send:hover{background:#d4ad5f}
+.alchat-send:disabled{opacity:.4;cursor:not-allowed}
+
+.alchat-helper{font-size:11px;color:#6a6a6a;letter-spacing:.3px;margin:8px 2px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.alchat-helper-text{flex:1;line-height:1.4;min-width:140px}
+.alchat-skip{background:transparent;border:none;color:#c9a050;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;padding:6px 8px;border-radius:4px;font-weight:600;min-height:30px}
+.alchat-skip:hover{background:#1a1500}
+.alchat-useval{background:#1a1500;border:1px solid #c9a050;color:#c9a050;font-size:11px;letter-spacing:.4px;cursor:pointer;padding:6px 10px;border-radius:6px;font-weight:700;min-height:30px}
+.alchat-useval:hover{background:#241a00}
+
+.alchat-choices{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
+.alchat-chip{background:#161616;border:1px solid #262626;color:#ccc;padding:10px 14px;font-size:13px;border-radius:20px;cursor:pointer;transition:all .15s}
+.alchat-chip:hover{border-color:#c9a050;color:#c9a050}
+.alchat-chip:active{background:#1a1500}
+
+.alchat-result{background:#121212;border:1px solid #1f1f1f;border-radius:12px;padding:24px 22px;margin-top:14px;animation:alchat-in .5s ease-out}
+.alchat-score-row{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.alchat-score-num{font-size:56px;font-weight:800;line-height:1;color:#c9a050}
+.alchat-score-out{font-size:14px;color:#555}
+.alchat-grade{font-size:14px;font-weight:600;margin-bottom:18px}
+.alchat-cat{display:flex;justify-content:space-between;font-size:12px;color:#888;padding:6px 0;border-top:1px solid #1a1a1a}
+.alchat-cat:first-of-type{border-top:none}
+.alchat-cat strong{color:#ccc;font-weight:600}
+.alchat-finding{margin-top:18px;padding:14px 16px;background:#0d0d0d;border-left:3px solid #c9a050;border-radius:0 6px 6px 0;font-size:14px;line-height:1.55;color:#d8d8d8}
+.alchat-unsure{margin-top:10px;padding:10px 12px;background:#0a0a0a;border:1px dashed #2a2a2a;border-radius:6px;font-size:12px;line-height:1.5;color:#9a9a9a}
+.alchat-unsure strong{color:#c9a050;font-weight:700}
+
+.alchat-branchwarn{margin-top:14px;padding:12px 14px;background:#241a00;border:1px solid #3a2d10;border-radius:8px;font-size:13px;color:#ffd680;line-height:1.5}
+.alchat-branchwarn strong{color:#ffd680}
+
+.alchat-chip.selected{background:#1a1500;border-color:#c9a050;color:#c9a050}
+.alchat-result-block{padding:14px 0}
+.alchat-result-block:first-child{padding-top:0}
+.alchat-block-label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#c9a050;margin-bottom:10px;font-weight:700}
+.alchat-block-good{background:#0d130c;border:1px solid #1a2a18;border-radius:8px;padding:14px 16px;margin:10px 0}
+.alchat-block-notgood{background:#130d0d;border:1px solid #2a1a1a;border-radius:8px;padding:14px 16px;margin:10px 0}
+.alchat-contact-form{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+.alchat-contact-pref-label{font-size:12px;color:#888;letter-spacing:.3px;margin:2px 2px 0}
+.alchat-contact-phone-row{margin-top:0}
+
+.alchat-cta{display:block;width:100%;background:#c9a050;color:#0d0d0d;text-align:center;padding:15px;font-size:14px;font-weight:700;letter-spacing:.5px;border-radius:8px;text-decoration:none;margin-top:18px;border:none;cursor:pointer}
+.alchat-cta:hover{background:#d4ad5f}
+.alchat-cta.ghost{background:#161616;color:#aaa;margin-top:10px;border:1px solid #262626}
+
+.alchat-progress{position:sticky;top:0;height:3px;background:#1a1a1a;border-radius:3px;overflow:hidden;margin-bottom:18px;z-index:5}
+.alchat-progress-fill{height:100%;background:#c9a050;width:0;transition:width .35s ease-out}
+
+.alchat-footnote{text-align:center;font-size:11px;color:#444;margin-top:14px}
+
+.alchat-verified{display:inline-block;background:#1a2a18;border:1px solid #2b4426;color:#8bc34a;padding:3px 10px;border-radius:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;margin-top:6px}
+.alchat-notfound{display:inline-block;background:#1a1a2a;border:1px solid #262644;color:#9aaad8;padding:3px 10px;border-radius:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;margin-top:6px}
+
+@media (max-width:520px){
+  .alchat{padding:24px 14px 100px}
+  .alchat-msg{max-width:90%}
+  .alchat-score-num{font-size:46px}
+  .alchat-user.editable::before{opacity:.6;font-size:14px}
+}
+
+.alchat-good-list{margin:6px 0 0;padding:0;list-style:none}
+.alchat-good-list li{position:relative;font-size:13.5px;line-height:1.5;color:#cfe0c8;padding:4px 0 4px 22px}
+.alchat-good-list li::before{content:'\2713';position:absolute;left:0;top:4px;color:#8bc34a;font-weight:700}
+.alchat-block-solution{background:#0d1110;border:1px solid #243524;border-radius:8px;padding:16px;margin:10px 0 0}
+.alchat-route-badges{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:2px 0 11px}
+.alchat-route-badge{background:#1a1500;border:1px solid #c9a050;color:#e6c65c;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:6px 13px;border-radius:999px}
+.alchat-route-sep{color:#5a5a5a;font-weight:700;font-size:13px}
+.alchat-route-copy{font-size:13.5px;line-height:1.55;color:#d8d8d8;margin-bottom:2px}
+</style>
+
+<div class="alchat" id="alchat-root">
+  <div class="alchat-progress"><div class="alchat-progress-fill" id="alchat-progress-fill"></div></div>
+  <div class="alchat-eyebrow">AlignmentSEO Visibility Diagnostic</div>
+  <div class="alchat-title">Your Google visibility, audited.</div>
+  <div class="alchat-stream" id="alchat-stream"></div>
+  <div class="alchat-dock" id="alchat-dock"></div>
+  <div class="alchat-footnote">Source: Visibility Chat Lead. alignmentseo.com</div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var CONFIG = {
+    apiBase:        'https://visibility-tool-yfl1.vercel.app',
+    zapierWebhook:  'https://hooks.zapier.com/hooks/catch/27139841/u7rstda/',
+    calendlyURL:    'https://calendly.com/hello-alignmentseo/30min',
+    leadSource:     'Visibility Chat Lead',
+    notifyEmail:    'hello@alignmentseo.com',
+    enterDebounceMs: 350,
+    callDurationLabel: '30-min'
+  };
+
+  var answers = {
+    industry: null, bizName: null, bizCity: null, years: null,
+    reviews: null, rating: null, velocity: null, pages: null,
+    gbp: null, posts: null, responses: null, photos: null,
+    site: null, email: null, name: null, phone: null,
+    contactPreference: null, hospitalityMenu: null,
+    gbpManagement: null, sitePlatform: null, siteMaintainer: null,
+    serviceCoverage: null, directBooking: null, bestTime: null,
+    recommendedEngagement: null
+  };
+  var verified = null;
+  var session = {
+    startedAt: Date.now(), finishedAt: null,
+    score: null, grade: null, source: CONFIG.leadSource
+  };
+  var notSure = {};
+  var originalFlowIndustry = null;
+  var branchConflict = false;
+  var userBubbles = {};
+  var resultShown = false;
+  var dockRenderedAt = 0;
+  var coachmarkShown = false;
+
+  var industryBenchmarks = {
+    chiropractor: 'Top clinics often have 100 to 300+ reviews.',
+    dental:       'Top dental practices often have 80 to 250+ reviews.',
+    medspa:       'Top med spas often have 60 to 200+ reviews.',
+    salon:        'Top salons often have 80 to 300+ reviews.',
+    auto:         'Top shops often have 80 to 200+ reviews.',
+    hvac:         'Top HVAC companies often have 60 to 150+ reviews.',
+    plumbing:     'Top plumbers often have 50 to 150+ reviews.',
+    retail:       'Top retail relies on visual activity and reviews.',
+    restaurant:   'Top restaurants often have 300 to 1000+ reviews and a visible online menu.',
+    bar:          'Top bars and lounges often have 150 to 500+ reviews and strong photo presence.',
+    hotel:        'Top hotels often have 200 to 500+ reviews and strong photo and amenity presence.',
+    other:        'Top businesses consistently outperform in reviews and activity.'
+  };
+
+  function isHospitality(){
+    return answers.industry === 'restaurant' || answers.industry === 'bar';
+  }
+  function hospitalityNoun(){
+    return answers.industry === 'bar' ? 'bar' : 'restaurant';
+  }
+  function menuNoun(){
+    return answers.industry === 'bar' ? 'menu and drinks list' : 'menu';
+  }
+
+  var INDUSTRY_CHOICES = [
+    { label: 'Chiropractic',  value: 'chiropractor' },
+    { label: 'Dental',        value: 'dental' },
+    { label: 'Med spa',       value: 'medspa' },
+    { label: 'Salon',         value: 'salon' },
+    { label: 'Auto repair',   value: 'auto' },
+    { label: 'HVAC',          value: 'hvac' },
+    { label: 'Plumbing',      value: 'plumbing' },
+    { label: 'Retail',        value: 'retail' },
+    { label: 'Restaurant',    value: 'restaurant' },
+    { label: 'Bar / Lounge',  value: 'bar' },
+    { label: 'Hotel',         value: 'hotel' },
+    { label: 'Other',         value: 'other' }
+  ];
+
+  function validNumber(v){ return (isNaN(+v) || +v < 0) ? 'A number, please' : null; }
+  function validRating(v){ var n=+v; return (isNaN(n)||n<0||n>5) ? 'Between 0 and 5' : null; }
+  function castNum(v){ return +v; }
+  function castStr(v){ return v; }
+
+  var STEPS = {
+    industry: { kind:'choices', choices: INDUSTRY_CHOICES, labelOf: function(v){ var c = INDUSTRY_CHOICES.find(function(x){return x.value===v;}); return c?c.label:v; } },
+    bizName:  { kind:'text', validate:function(v){return v.length<2?'Need a real business name':null;}, cast:castStr },
+    bizCity:  { kind:'text', validate:function(v){return v.length<2?'City helps locate the profile':null;}, cast:castStr },
+    years:    { kind:'text', type:'number', validate:validNumber, cast:castNum },
+    reviews:  { kind:'text', type:'number', validate:validNumber, cast:castNum },
+    rating:   { kind:'text', type:'number', validate:validRating, cast:castNum },
+    velocity: { kind:'text', type:'number', validate:validNumber, cast:castNum },
+    gbp:      { kind:'choices', choices:[{label:'Yes, fully',value:'yes'},{label:'Partially',value:'partial'},{label:'No / not sure',value:'no'}] },
+    posts:    { kind:'choices', choices:[{label:'Yes, regularly',value:'yes'},{label:'Sometimes',value:'sometimes'},{label:'No',value:'no'}] },
+    responses:{ kind:'choices', choices:[{label:'Yes, all of them',value:'yes'},{label:'Some',value:'some'},{label:'Rarely or never',value:'no'}] },
+    photos:   { kind:'text', type:'number', validate:validNumber, cast:castNum },
+    site:     { kind:'choices', choices:[{label:'Yes',value:'yes'},{label:'Partially',value:'partial'},{label:'No / unsure',value:'no'}] },
+    pages:    { kind:'text', type:'number', validate:validNumber, cast:castNum },
+    email:    { kind:'text', type:'email', validate:function(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)?null:'That does not look right';}, cast:castStr },
+    name:     { kind:'text', validate:function(v){return v.length<2?'Just a first name is fine':null;}, cast:castStr },
+    phone:    { kind:'text', type:'tel', validate:function(v){return v.replace(/\D/g,'').length<7?'Need a valid phone number':null;}, cast:castStr },
+    contactPreference: { kind:'choices', choices:[{label:'Call me',value:'call'},{label:'Text me',value:'text'},{label:'Email me',value:'email'},{label:'Let me pick a time',value:'calendly'}] },
+    hospitalityMenu: { kind:'choices', choices:[{label:'Yes, full menu online',value:'yes'},{label:'Partially',value:'partial'},{label:'No / hard to find',value:'no'}] },
+    gbpManagement: { kind:'choices', choices:[{label:'I manage it',value:'self'},{label:'A staff member',value:'staff'},{label:'An outside vendor or agency',value:'vendor'},{label:'No one, really',value:'none'},{label:'Not sure',value:'unsure'}] },
+    sitePlatform: { kind:'choices', choices:[{label:'Squarespace',value:'squarespace'},{label:'WordPress',value:'wordpress'},{label:'Wix',value:'wix'},{label:'Shopify',value:'shopify'},{label:'Custom build',value:'custom'},{label:'No website yet',value:'none'},{label:'Not sure',value:'unsure'}] },
+    siteMaintainer: { kind:'choices', choices:[{label:'I do',value:'self'},{label:'In-house team',value:'team'},{label:'An outside agency',value:'agency'},{label:'A freelancer',value:'freelancer'},{label:'No one, really',value:'none'}] },
+    serviceCoverage: { kind:'choices', choices:[{label:'Yes, all of them',value:'yes'},{label:'Some of them',value:'somewhat'},{label:'Not really',value:'no'}] },
+    directBooking: { kind:'choices', choices:[{label:'Yes, direct booking is live',value:'direct'},{label:'Partly, some channels',value:'partial'},{label:'No, OTAs only',value:'ota'}] }
+  };
+
+  function labelFor(key, value){
+    var s = STEPS[key];
+    if (!s) return value == null ? '' : String(value);
+    if (s.kind === 'choices'){
+      var c = s.choices.find(function(x){ return x.value === value; });
+      return c ? c.label : (value == null ? '' : String(value));
+    }
+    return value == null ? '' : String(value);
+  }
+
+  var stream = document.getElementById('alchat-stream');
+  var dock   = document.getElementById('alchat-dock');
+  var prog   = document.getElementById('alchat-progress-fill');
+
+  function el(tag, cls, html){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function scrollDown(){
+    requestAnimationFrame(function(){
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+  }
+  function escapeHTML(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function bot(text, cb){
+    var typing = el('div','alchat-typing','<span></span><span></span><span></span>');
+    stream.appendChild(typing); scrollDown();
+    var delay = Math.min(900, 280 + text.length * 14);
+    setTimeout(function(){
+      stream.removeChild(typing);
+      var m = el('div','alchat-msg alchat-bot', text);
+      stream.appendChild(m); scrollDown();
+      if (cb) setTimeout(cb, 160);
+    }, delay);
+  }
+
+  function user(text, key){
+    var m = el('div','alchat-msg alchat-user', escapeHTML(text));
+    if (key && STEPS[key]){
+      m.classList.add('editable');
+      m.dataset.key = key;
+      m.setAttribute('title','Tap to edit');
+      userBubbles[key] = m;
+      if (!coachmarkShown){
+        m.classList.add('coachmark');
+        coachmarkShown = true;
+        setTimeout(function(){ m.classList.remove('coachmark'); }, 6000);
+      }
+      m.addEventListener('click', function(){
+        m.classList.remove('coachmark');
+        openInlineEdit(m, key);
+      });
+    }
+    stream.appendChild(m); scrollDown();
+  }
+
+  function system(text){
+    var m = el('div','alchat-msg alchat-system', escapeHTML(text));
+    stream.appendChild(m); scrollDown();
+  }
+
+  function encourage(text){
+    var m = el('div','alchat-msg alchat-encourage', escapeHTML(text));
+    stream.appendChild(m); scrollDown();
+  }
+
+  function clearDock(){
+    dock.innerHTML = '';
+    dockRenderedAt = Date.now();
+  }
+
+  function setProgress(pct){
+    prog.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+
+  function openInlineEdit(bubble, key){
+    if (bubble.dataset.editing === '1') return;
+    var spec = STEPS[key];
+    if (!spec) return;
+    var prevValue = answers[key];
+    var prevLabel = labelFor(key, prevValue);
+
+    bubble.dataset.editing = '1';
+    bubble.classList.add('editing');
+    bubble.classList.remove('just-edited');
+    bubble.innerHTML = '';
+
+    if (spec.kind === 'choices'){
+      var choicesWrap = el('div','alchat-edit-choices');
+      spec.choices.forEach(function(c){
+        var b = el('button','alchat-edit-choice', escapeHTML(c.label));
+        if (c.value === prevValue) b.classList.add('current');
+        b.addEventListener('click', function(ev){
+          ev.stopPropagation();
+          if (notSure[key]) delete notSure[key];
+          answers[key] = c.value;
+          finishEdit(bubble, key, c.label);
+        });
+        choicesWrap.appendChild(b);
+      });
+      var cancel = el('button','alchat-edit-cancel','Cancel');
+      cancel.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        finishEdit(bubble, key, prevLabel, true);
+      });
+      bubble.appendChild(choicesWrap);
+      bubble.appendChild(cancel);
+    } else {
+      var inp = el('input','alchat-edit-input');
+      inp.type = spec.type || 'text';
+      if (spec.type === 'number') inp.inputMode = 'decimal';
+      if (spec.type === 'email')  inp.autocomplete = 'email';
+      inp.value = prevValue == null ? '' : String(prevValue);
+      var row = el('div','alchat-edit-row');
+      var save = el('button','alchat-edit-save','Save');
+      var cancel2 = el('button','alchat-edit-cancel','Cancel');
+      row.appendChild(save); row.appendChild(cancel2);
+      bubble.appendChild(inp); bubble.appendChild(row);
+      setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(_){ } }, 30);
+
+      function commit(){
+        var v = (inp.value || '').trim();
+        if (!v){ finishEdit(bubble, key, prevLabel, true); return; }
+        if (spec.validate){
+          var err = spec.validate(v);
+          if (err){ inp.style.borderColor = '#ff5252'; inp.placeholder = err; return; }
+        }
+        var stored = spec.cast ? spec.cast(v) : v;
+        if (notSure[key]) delete notSure[key];
+        answers[key] = stored;
+        finishEdit(bubble, key, String(stored));
+      }
+      save.addEventListener('click', function(ev){ ev.stopPropagation(); commit(); });
+      cancel2.addEventListener('click', function(ev){ ev.stopPropagation(); finishEdit(bubble, key, prevLabel, true); });
+      inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') commit(); if (e.key === 'Escape') finishEdit(bubble, key, prevLabel, true); });
+    }
+  }
+
+  function finishEdit(bubble, key, newLabel, cancelled){
+    bubble.dataset.editing = '0';
+    bubble.classList.remove('editing');
+    bubble.innerHTML = escapeHTML(newLabel);
+    if (!cancelled){
+      bubble.classList.add('just-edited');
+      setTimeout(function(){ bubble.classList.remove('just-edited'); }, 900);
+      if (key === 'industry' && resultShown){
+        var nowHosp = isHospitality();
+        var wasHosp = originalFlowIndustry === 'restaurant' || originalFlowIndustry === 'bar';
+        if (nowHosp !== wasHosp){
+          branchConflict = true;
+          updateResultCardInPlace();
+          return;
+        } else {
+          branchConflict = false;
+        }
+      }
+      if (resultShown) updateResultCardInPlace();
+    }
+  }
+
+  function askText(opts){
+    clearDock();
+    var row = el('div','alchat-input-row');
+    var input = el('input','alchat-input');
+    input.type = opts.type || 'text';
+    input.placeholder = opts.placeholder || 'Type your answer...';
+    if (opts.type === 'number') { input.inputMode = 'decimal'; }
+    if (opts.type === 'email')  { input.autocomplete = 'email'; }
+    if (opts.type === 'tel')    { input.inputMode = 'tel'; }
+    var btn = el('button','alchat-send','Send');
+    row.appendChild(input); row.appendChild(btn); dock.appendChild(row);
+
+    if (opts.helper || opts.skippable || opts.suggest != null){
+      var helperRow = el('div','alchat-helper');
+      var helperText = el('span','alchat-helper-text', escapeHTML(opts.helper || ''));
+      helperRow.appendChild(helperText);
+
+      if (opts.suggest != null){
+        var useBtn = el('button','alchat-useval','Use ' + String(opts.suggest));
+        useBtn.type = 'button';
+        useBtn.addEventListener('click', function(){
+          btn.disabled = true;
+          if (notSure[opts.key]) delete notSure[opts.key];
+          var v = String(opts.suggest);
+          user(v, opts.key);
+          clearDock();
+          opts.onSubmit(v);
+        });
+        helperRow.appendChild(useBtn);
+      }
+
+      if (opts.skippable){
+        var skipBtn = el('button','alchat-skip','Not sure');
+        skipBtn.type = 'button';
+        skipBtn.addEventListener('click', function(){
+          btn.disabled = true;
+          notSure[opts.key] = true;
+          user('Not sure', opts.key);
+          clearDock();
+          if (opts.onSkip) opts.onSkip();
+          else if (opts.onSubmit) opts.onSubmit(null);
+        });
+        helperRow.appendChild(skipBtn);
+      }
+      dock.appendChild(helperRow);
+    }
+
+    setTimeout(function(){ try{ input.focus(); }catch(_){ } }, 50);
+
+    function submit(){
+      var v = (input.value || '').trim();
+      if (!v) return;
+      if (opts.validate){
+        var err = opts.validate(v);
+        if (err){ input.style.borderColor = '#ff5252'; input.placeholder = err; input.value=''; return; }
+      }
+      btn.disabled = true;
+      if (notSure[opts.key]) delete notSure[opts.key];
+      user(v, opts.key);
+      clearDock();
+      opts.onSubmit(v);
+    }
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (Date.now() - dockRenderedAt < CONFIG.enterDebounceMs) return;
+      submit();
+    });
+  }
+
+  function askChoices(opts){
+    clearDock();
+    var wrap = el('div','alchat-choices');
+    opts.choices.forEach(function(c){
+      var chip = el('button','alchat-chip', escapeHTML(c.label));
+      chip.addEventListener('click', function(){
+        user(c.label, opts.key);
+        clearDock();
+        opts.onPick(c.value, c.label);
+      });
+      wrap.appendChild(chip);
+    });
+    dock.appendChild(wrap);
+  }
+
+  function verifyBusiness(name, city, cb){
+    var url = CONFIG.apiBase + '/api/scan?name=' + encodeURIComponent(name) + '&city=' + encodeURIComponent(city);
+    fetch(url)
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (!data) return cb(null);
+        if (data.place_results) {
+          var p = data.place_results;
+          cb({ reviews:p.reviews||0, rating:p.rating||0, address:p.address||'', title:p.title||name, mode:data.mode||'live' });
+          return;
+        }
+        if (data.local_results && data.local_results.length){
+          var match = null, target = name.toLowerCase();
+          for (var i=0;i<data.local_results.length;i++){
+            var lr = data.local_results[i];
+            if (lr && lr.title && lr.title.toLowerCase().indexOf(target) !== -1){ match = lr; break; }
+          }
+          match = match || data.local_results[0];
+          cb({ reviews:match.reviews||0, rating:match.rating||0, address:match.address||'', title:match.title||name, mode:data.mode||'live' });
+          return;
+        }
+        cb(null);
+      })
+      .catch(function(){ cb(null); });
+  }
+
+  /* ============================================================
+     SCORING ENGINE. CHARACTER-IDENTICAL TO v1 through v5.
+     DO NOT MODIFY.
+     ============================================================ */
+  function scoreReport(){
+    var reviews  = +answers.reviews  || 0;
+    var rating   = +answers.rating   || 0;
+    var vel      = +answers.velocity || 0;
+    var pages    = +answers.pages    || 0;
+    var photos   = +answers.photos   || 0;
+    var years    = +answers.years    || 0;
+    var gbp      = answers.gbp       || 'no';
+    var posts    = answers.posts     || 'no';
+    var responses= answers.responses || 'no';
+    var site     = answers.site      || 'no';
+
+    var s_revCount = reviews>=200?18:reviews>=100?15:reviews>=50?11:reviews>=25?7:reviews>=10?4:reviews>=1?2:0;
+    var s_rating   = rating>=4.8?10:rating>=4.5?8:rating>=4.0?5:rating>=3.5?2:0;
+    var s_vel      = vel>=5?7:vel>=3?5:vel>=1?2:0;
+    var cat1 = s_revCount + s_rating + s_vel;
+
+    var s_gbp       = gbp==='yes'?10:gbp==='partial'?4:0;
+    var s_posts     = posts==='yes'?8:posts==='sometimes'?3:0;
+    var s_responses = responses==='yes'?7:responses==='some'?3:0;
+    var s_photos    = photos>=30?5:photos>=15?4:photos>=6?2:0;
+    var cat2 = s_gbp + s_posts + s_responses + s_photos;
+
+    var s_site  = site==='yes'?13:site==='partial'?5:0;
+    var s_pages = pages>=6?12:pages>=3?8:pages>=1?4:0;
+    var cat3 = s_site + s_pages;
+
+    var s_years = years>=10?10:years>=5?8:years>=2?5:years>=1?2:0;
+    var cat4 = s_years;
+
+    var total = cat1 + cat2 + cat3 + cat4;
+    var grade, color;
+    if      (total>=85) { grade='Strong Visibility';                       color='#4caf50'; }
+    else if (total>=70) { grade='Good. Noticeable Gaps Remain';            color='#8bc34a'; }
+    else if (total>=50) { grade='Fair. Meaningful Leakage Present';        color='#ff9800'; }
+    else if (total>=30) { grade='Poor. Significant Issues Found';          color='#ff5722'; }
+    else                { grade='Critical. Immediate Attention Needed';    color='#f44336'; }
+
+    return {
+      total:total, grade:grade, color:color,
+      cats:[
+        { name:'Review presence',  pts:cat1, max:35 },
+        { name:'GBP optimization', pts:cat2, max:30 },
+        { name:'Website strength', pts:cat3, max:25 },
+        { name:'Business maturity',pts:cat4, max:10 }
+      ]
+    };
+  }
+
+  /* ============================================================
+     TOP FINDING. v6 precision pass.
+     Hierarchy by category cluster. Lead category gets the
+     diagnosis sentence; secondary categories are framed as
+     cleanup. No "working in your favor", "piece holding the
+     score back", "consistency" repetition. Maturity sentence
+     is score-aware and silent for top-tier reads.
+     ============================================================ */
+
+  // Lead-cluster headlines. Stored lowercase (GBP excepted as acronym)
+  // so they read naturally mid-sentence. capitalize() is applied at
+  // assembly when a headline starts a sentence.
+  var CAT_HEADLINES = {
+    gbp:     'GBP setup',
+    reviews: 'review presence',
+    photos:  'photo cadence',
+    menu:    'menu visibility',
+    site:    'site structure'
+  };
+
+  function topFinding(report){
+    var R   = +answers.reviews  || 0;
+    var Rt  = +answers.rating   || 0;
+    var V   = +answers.velocity || 0;
+    var P   = +answers.photos   || 0;
+    var Pg  = +answers.pages    || 0;
+    var Y   = +answers.years    || 0;
+    var gbp = answers.gbp;
+    var posts = answers.posts;
+    var resp  = answers.responses;
+    var site  = answers.site;
+    var menu  = answers.hospitalityMenu;
+    var hosp  = isHospitality();
+    var mNoun = menuNoun();
+    var score = report.total;
+
+    // ===== CRITICAL CASES (4 distinct openers) =====
+    if (!notSure.reviews && R === 0) {
+      return 'Zero Google reviews means there is nothing for Google or a prospective customer to read. Reviews are the first signal both check. Until a handful are in, the rest of this dashboard will not move.';
+    }
+    if (!notSure.rating && Rt > 0 && Rt < 4) {
+      return 'A ' + Rt + ' star rating filters you out of consideration before anyone reads the name. The stars are visible inside the search result itself, so the rating decides who clicks. Lifting it matters more right now than any additional traffic would.';
+    }
+    if (hosp && menu === 'no') {
+      return 'Your ' + mNoun + ' is not visible online. Guests at a ' + hospitalityNoun() + ' decide where to eat from what they can see on a phone first. A scannable ' + mNoun + ' is the highest-leverage fix on this list.';
+    }
+    if (gbp === 'no') {
+      return 'Your Google Business Profile is unclaimed or incomplete. That profile is what Google reads first when ranking a local business. Claiming it and filling in the basics is an afternoon of work, and the lift shows up almost immediately.';
+    }
+
+    // ===== SYNTHESIS =====
+
+    // Each gap carries a short telegraphic form (for cluster lists)
+    // and a full form (for standalone use). Each strength is a noun
+    // phrase that can stand as a sentence subject when capitalized.
+    var strengths = [];          // [{cat, text}]
+    var gapsByCat = { gbp:[], reviews:[], photos:[], menu:[], site:[] };
+    function pushGap(cat, short, full){ gapsByCat[cat].push({ short: short, full: full }); }
+
+    // ---- Reviews / rating / velocity ----
+    var reviewsStrong = (!notSure.reviews && !notSure.rating && R >= 50 && Rt >= 4.3);
+    if (reviewsStrong){
+      strengths.push({ cat:'reviews', text:'the review foundation (' + R + ' at ' + Rt + ' stars)' });
+    } else if (!notSure.reviews && R >= 25 && R < 50){
+      pushGap('reviews', 'review volume at ' + R, 'review volume sits at ' + R + ' (top local pack runs 50 to 200+)');
+    } else if (!notSure.reviews && R >= 10 && R < 25){
+      pushGap('reviews', 'light review count (' + R + ')', 'the review count is light at ' + R);
+    }
+
+    if (!notSure.velocity){
+      if (V >= 5 && !reviewsStrong){
+        strengths.push({ cat:'reviews', text:'strong review velocity (' + V + ' a month)' });
+      } else if (V >= 3 && !reviewsStrong){
+        strengths.push({ cat:'reviews', text:'steady review velocity (' + V + ' a month)' });
+      } else if (V >= 1 && V < 3){
+        if (reviewsStrong) pushGap('reviews', 'velocity cooled to ' + V + '/mo', 'velocity has cooled to ' + V + ' a month');
+        else pushGap('reviews', 'velocity at ' + V + '/mo', 'review velocity is ' + V + ' a month (top performers run 3 to 5+)');
+      } else if (V === 0){
+        if (reviewsStrong) pushGap('reviews', 'velocity has stalled', 'review velocity has stalled at zero per month');
+        else pushGap('reviews', 'no new reviews coming in', 'no new reviews are coming in');
+      }
+    }
+
+    // ---- GBP cluster (gbp itself, posts, responses) ----
+    var gbpFullyStrong = gbp === 'yes' && posts === 'yes' && resp === 'yes';
+    if (gbpFullyStrong){
+      strengths.push({ cat:'gbp', text:'a fully-dialed GBP (claimed, posting, responding)' });
+    } else {
+      if (gbp === 'partial') pushGap('gbp', 'partial setup', 'the GBP setup is only partially built out');
+      if (posts === 'no') pushGap('gbp', 'no Google Posts', 'there is no Google Posts cadence');
+      else if (posts === 'sometimes') pushGap('gbp', 'inconsistent Google Posts', 'Google Posts are inconsistent');
+      if (resp === 'no') pushGap('gbp', 'unanswered reviews', 'reviews are going unanswered');
+      else if (resp === 'some') pushGap('gbp', 'spotty review responses', 'review responses are spotty');
+    }
+
+    // ---- Photos ----
+    if (!notSure.photos){
+      if (hosp){
+        if (P >= 50) strengths.push({ cat:'photos', text:'strong photo presence (' + P + ' photos)' });
+        else if (P >= 15) pushGap('photos', 'photos at ' + P, 'photo count sits at ' + P + ' (50+ for hospitality)');
+        else pushGap('photos', 'light photo count (' + P + ')', 'photo count is light at ' + P + '; dish and space photos are a primary conversion lever');
+      } else {
+        if (P >= 30) strengths.push({ cat:'photos', text:'strong photo presence (' + P + ' photos)' });
+        else if (P >= 6) pushGap('photos', 'photos at ' + P, 'photo count sits at ' + P + ' (top performers run 30+)');
+        else pushGap('photos', 'light photo count (' + P + ')', 'photo count is light at ' + P);
+      }
+    }
+
+    // ---- Menu (hospitality, partial only; 'no' is critical, 'yes' is strength) ----
+    if (hosp && menu === 'partial'){
+      pushGap('menu', 'menu partially visible', 'the online ' + mNoun + ' is only partially visible');
+    } else if (hosp && menu === 'yes'){
+      strengths.push({ cat:'menu', text:'an online ' + mNoun + ' that is fully visible' });
+    }
+
+    // ---- Site ----
+    var siteStrong = site === 'yes' && Pg >= 3;
+    if (siteStrong){
+      strengths.push({ cat:'site', text:'a site that supports local search (' + Pg + ' service/location pages)' });
+    } else {
+      if (site === 'no') pushGap('site', 'site not built for local search', 'the site is not built for local search');
+      else if (site === 'partial') pushGap('site', 'partial site optimization', 'site optimization is partial');
+      if (!notSure.pages){
+        if (Pg === 0) pushGap('site', 'no service pages yet', 'there are no service or location pages yet');
+        else if (Pg >= 1 && Pg < 3) pushGap('site', 'only ' + Pg + ' service page' + (Pg > 1 ? 's' : ''), 'only ' + Pg + ' service or location page' + (Pg > 1 ? 's' : '') + ' on the site (top performers run 3 to 6+)');
+      }
+    }
+
+    // ---- Determine cluster ordering ----
+    var catKeys = ['gbp','reviews','site','menu','photos'];
+    var catOrder = catKeys.filter(function(c){ return gapsByCat[c].length > 0; });
+    catOrder.sort(function(a,b){ return gapsByCat[b].length - gapsByCat[a].length; });
+    var leadCat = catOrder[0];
+    var leadGaps = leadCat ? gapsByCat[leadCat] : [];
+    var secondaryCats = catOrder.slice(1);
+    var totalGaps = catOrder.reduce(function(s,c){ return s + gapsByCat[c].length; }, 0);
+
+    // ---- Maturity (score-aware) ----
+    var maturity = '';
+    if (Y >= 10 && score < 70){
+      maturity = ' Google has enough operating history to trust the business already. The gaps above are at the surface, not the foundation.';
+    } else if (Y >= 5 && Y < 10 && score < 70){
+      maturity = ' The business is established; you are not fighting legitimacy here. The work above is surface execution.';
+    } else if (Y >= 1 && Y < 2){
+      maturity = ' At one year in, early-cadence gaps are expected. The priorities above compound fastest once they are running.';
+    }
+
+    // ---- Helpers for sentence assembly ----
+    function leadDiagnosis(){
+      if (leadGaps.length >= 2){
+        var shorts = leadGaps.slice(0, 3).map(function(g){ return g.short; });
+        // Opener selection by score band AND maturity. Three distinct
+        // shapes; each picks the business who fits.
+        var opener;
+        if (score < 50){
+          opener = capitalize(CAT_HEADLINES[leadCat]) + ' is what is gating the score here: ';
+        } else if (Y >= 10 && score < 70){
+          opener = capitalize(CAT_HEADLINES[leadCat]) + ' is the soft spot in an otherwise long-running profile: ';
+        } else {
+          opener = capitalize(CAT_HEADLINES[leadCat]) + ' is the main drag right now: ';
+        }
+        return opener + shorts.join(', ') + '.';
+      }
+      // Single gap: use the full form.
+      return capitalize(leadGaps[0].full) + '.';
+    }
+
+    function strengthLine(){
+      if (!strengths.length) return '';
+      if (strengths.length === 1){
+        return capitalize(strengths[0].text) + ' is already in place.';
+      }
+      var s = strengths.slice(0, 2).map(function(x){ return x.text; });
+      return capitalize(s[0]) + ' and ' + s[1] + ' are already in place.';
+    }
+
+    function secondaryLine(){
+      // Always carries one grounded detail. Never abstract.
+      if (!secondaryCats.length) return '';
+      if (secondaryCats.length === 1){
+        var cat = secondaryCats[0];
+        var firstGap = gapsByCat[cat][0];
+        if (gapsByCat[cat].length >= 2){
+          return capitalize(CAT_HEADLINES[cat]) + ' is secondary cleanup: ' + firstGap.short + '.';
+        }
+        return capitalize(CAT_HEADLINES[cat]) + ' is the next cleanup item: ' + firstGap.short + '.';
+      }
+      // 2+ secondary categories: name the first specifically, leave the
+      // second as a category pointer so the sentence stays a single beat.
+      var firstSec = secondaryCats[0];
+      var firstSecGap = gapsByCat[firstSec][0];
+      return 'Also worth a pass: ' + firstSecGap.short + ', and ' + CAT_HEADLINES[secondaryCats[1]] + '.';
+    }
+
+    // Subtle leverage watch-item for top-tier reads. Picks the
+    // lowest of the strong-tier signals so the observation lands
+    // on the input that actually has the most room left.
+    function topTierWatchItem(){
+      var photoThreshold = hosp ? 100 : 60;
+      if (!notSure.photos && P < photoThreshold){
+        return 'Photo cadence is the next axis: fresh upload cycles widen the lead at this tier.';
+      }
+      if (!notSure.pages && Pg < 6){
+        return 'Service-page depth still has room: top performers run 6+ tightly-themed pages.';
+      }
+      if (!notSure.velocity && V < 8){
+        return 'Review freshness is the next axis: businesses at this tier compete on month-over-month velocity.';
+      }
+      return 'GBP posting rhythm and service-category expansion are where this tier differentiates.';
+    }
+
+    // ===== BRANCHES =====
+
+    // Top tier: no gaps, 3+ strengths. Subtle watch-item appended.
+    if (totalGaps === 0 && strengths.length >= 3){
+      var ts = strengths.slice(0, 3).map(function(x){ return x.text; });
+      return 'Top-tier read. ' + capitalize(ts[0]) + ', ' + ts[1] + ', and ' + ts[2] + '. ' + topTierWatchItem() + ' Hold cadence; watch for drift.';
+    }
+
+    // Clean baseline: no gaps, 1-2 strengths
+    if (totalGaps === 0){
+      if (strengths.length === 0){
+        return 'Steady baseline across the board. Hold cadence on reviews, GBP, and responses.';
+      }
+      var t = strengths.slice(0, 2).map(function(x){ return x.text; });
+      var joined = t.length === 1 ? t[0] : t[0] + ' and ' + t[1];
+      return 'Clean read across the board. ' + capitalize(joined) + '. Hold cadence; watch for drift.';
+    }
+
+    // Single gap total
+    if (totalGaps === 1){
+      if (strengths.length >= 1){
+        var sj = strengths.slice(0, 2).map(function(x){ return x.text; });
+        var strJoin, strVerb;
+        if (sj.length === 1){
+          strJoin = sj[0];
+          strVerb = ' is already in place.';
+        } else {
+          strJoin = sj[0] + ' and ' + sj[1];
+          strVerb = ' are already in place.';
+        }
+        // Colon transition handles both sentence-form and noun-phrase gap clauses.
+        return 'The only real lift left here: ' + capitalize(leadGaps[0].full) + '. ' + capitalize(strJoin) + strVerb + maturity;
+      }
+      return 'One move stands out: ' + leadGaps[0].full + '.' + maturity;
+    }
+
+    // Multi-gap lead cluster (the most common case for mid-scoring scans)
+    if (leadGaps.length >= 2){
+      var diag = leadDiagnosis();
+      var strLine = strengthLine();
+      var secLine = secondaryLine();
+      return diag
+        + (strLine ? ' ' + strLine : '')
+        + (secLine ? ' ' + secLine : '')
+        + maturity;
+    }
+
+    // Split gaps: 2+ total but no cluster has 2+
+    // Each category has exactly one gap; present top two as paired observations.
+    var allGaps = [];
+    catOrder.forEach(function(c){ gapsByCat[c].forEach(function(g){ allGaps.push(g); }); });
+    var top2 = allGaps.slice(0, 2);
+    var pairText = top2[0].full + ', and ' + top2[1].full;
+    var midText = strengths.length ? ' ' + capitalize(strengths[0].text) + ' is already in place.' : '';
+    var thirdText = allGaps.length > 2 ? ' ' + capitalize(allGaps[2].full) + ' is the tertiary item.' : '';
+    return 'Two pieces to tighten: ' + pairText + '.' + midText + thirdText + maturity;
+  }
+
+  function sendLead(report, finding){
+    if (!CONFIG.zapierWebhook) return;
+    var notSureKeys = [];
+    for (var k in notSure){ if (notSure[k]) notSureKeys.push(k); }
+
+    var payload = {
+      source: CONFIG.leadSource,
+      timestamp: new Date().toISOString(),
+      durationSec: Math.round((Date.now()-session.startedAt)/1000),
+      score: report.total,
+      grade: report.grade,
+      topFinding: finding || '',
+      notSure: notSureKeys,
+      categoryBreakdown: report.cats,
+      business: {
+        name: answers.bizName,
+        city: answers.bizCity,
+        industry: answers.industry,
+        yearsInBusiness: answers.years
+      },
+      visibility: {
+        reviews: answers.reviews,
+        rating: answers.rating,
+        velocityPerMonth: answers.velocity,
+        gbpClaimed: answers.gbp,
+        gbpPosts: answers.posts,
+        reviewResponses: answers.responses,
+        gbpPhotos: answers.photos,
+        servicePages: answers.pages,
+        siteOptimized: answers.site,
+        hospitalityMenu: answers.hospitalityMenu,
+        gbpManagement: answers.gbpManagement,
+        sitePlatform: answers.sitePlatform,
+        siteMaintainer: answers.siteMaintainer,
+        serviceCoverage: answers.serviceCoverage,
+        directBooking: answers.directBooking,
+        recommendedEngagement: answers.recommendedEngagement
+      },
+      verifiedFromGoogle: verified ? {
+        verifiedReviews: verified.reviews, verifiedRating: verified.rating,
+        verifiedAddress: verified.address, verifiedTitle: verified.title, mode: verified.mode
+      } : null,
+      contact: { name: answers.name, email: answers.email, phone: answers.phone, contactPreference: answers.contactPreference, bestTime: answers.bestTime }
+    };
+    try{
+      fetch(CONFIG.zapierWebhook, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).catch(function(){
+        setTimeout(function(){
+          fetch(CONFIG.zapierWebhook, {
+            method:'POST', mode:'no-cors',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          }).catch(function(){});
+        }, 1500);
+      });
+    } catch(_){}
+  }
+
+  /* ============================================================
+     CONVERSATION FLOW. v6 chatbot-energy cleanup applied to copy.
+     ============================================================ */
+  var step = 0;
+  function advance(){
+    var total = (isHospitality() || answers.industry === 'hotel') ? 16 : 15;
+    step++;
+    setProgress((step / total) * 100);
+  }
+
+  function start(){
+    bot("AlignmentSEO local visibility audit. About 90 seconds. We look at where the business may be losing customers to competitors that show up cleaner on Google.", function(){
+      bot("First, what kind of business?", function(){
+        askChoices({
+          key: 'industry',
+          choices: INDUSTRY_CHOICES,
+          onPick: function(v){
+            answers.industry = v;
+            originalFlowIndustry = v;
+            advance();
+            encourage('Locating the profile.');
+            askBizName();
+          }
+        });
+      });
+    });
+  }
+
+  function askBizName(){
+    bot("Business name as it appears on Google?", function(){
+      askText({
+        key: 'bizName',
+        placeholder: 'e.g. Johr Chiropractic Center',
+        validate: STEPS.bizName.validate,
+        onSubmit: function(v){ answers.bizName = v; advance(); askCity(); }
+      });
+    });
+  }
+
+  function askCity(){
+    bot("And the city?", function(){
+      askText({
+        key: 'bizCity',
+        placeholder: 'e.g. St Clair Shores, MI',
+        validate: STEPS.bizCity.validate,
+        onSubmit: function(v){ answers.bizCity = v; advance(); verifyOnGoogle(); }
+      });
+    });
+  }
+
+  function verifyOnGoogle(){
+    bot("Pulling the Google Business Profile...", function(){
+      verifyBusiness(answers.bizName, answers.bizCity, function(v){
+        if (v && (v.reviews || v.rating || v.address)){
+          verified = v;
+          var line = "Profile matched. <strong>"+escapeHTML(v.title)+"</strong>"
+                   + (v.address ? ". "+escapeHTML(v.address) : "")
+                   + (v.rating  ? ". "+v.rating+"★"     : "")
+                   + (v.reviews ? ". "+v.reviews+" reviews"  : "")
+                   + "<br><span class=\"alchat-verified\">Verified. Live Google data</span>";
+          bot(line, function(){
+            confirmMatch();
+          });
+        } else {
+          // Honest fallback covering every failure mode.
+          bot("Profile match was inconclusive. That happens with similar business names, brand new listings, or a slow Google response. We will use the inputs you provide and verify on the call.<br><span class=\"alchat-notfound\">Using your inputs</span>", function(){
+            encourage('Quick details next.');
+            askYears();
+          });
+        }
+      });
+    });
+  }
+
+  function confirmMatch(){
+    bot("Found it. Is this the right business?", function(){
+      askChoices({
+        key:'matchConfirm',
+        choices:[
+          {label:"Yes, that's us", value:'yes'},
+          {label:'Not quite, let me re-enter', value:'refine'},
+          {label:'Use my own numbers', value:'manual'}
+        ],
+        onPick: function(v){
+          if (v === 'refine'){ verified = null; bot("No problem. Let's try the name and city again.", function(){ askBizName(); }); return; }
+          if (v === 'manual'){ verified = null; encourage('Using your inputs.'); askYears(); return; }
+          encourage('Quick details next.'); askYears();
+        }
+      });
+    });
+  }
+
+  function askYears(){
+    bot("Roughly how many years has the business been open?", function(){
+      askText({
+        key:'years', type:'number', placeholder:'years',
+        helper:'Approximate is fine.',
+        validate: STEPS.years.validate,
+        onSubmit: function(v){ answers.years = +v; advance(); askReviews(); }
+      });
+    });
+  }
+
+  function askReviews(){
+    var pre, suggest, helperText;
+    if (verified && verified.reviews){
+      pre = "Google shows <strong>"+verified.reviews+"</strong> reviews on the profile. Confirm, correct, or accept the verified number.";
+      suggest = verified.reviews;
+      helperText = 'Use the verified number or type the current count.';
+    } else {
+      pre = "How many Google reviews are on the profile right now?";
+      suggest = null;
+      helperText = 'Ballpark is fine. The call is where we verify.';
+    }
+    bot(pre, function(){
+      askText({
+        key:'reviews', type:'number',
+        placeholder: verified && verified.reviews ? String(verified.reviews) : 'e.g. 47',
+        helper: helperText,
+        suggest: suggest,
+        skippable: !(verified && verified.reviews),
+        validate: STEPS.reviews.validate,
+        onSubmit: function(v){
+          answers.reviews = v == null ? null : +v;
+          advance(); askRating();
+        }
+      });
+    });
+  }
+
+  function askRating(){
+    var pre, suggest, helperText;
+    if (verified && verified.rating){
+      pre = "Verified average rating: <strong>"+verified.rating+"★</strong>. Confirm or adjust.";
+      suggest = verified.rating;
+      helperText = 'Use the verified number or type the current rating.';
+    } else {
+      pre = "What is the average star rating?";
+      suggest = null;
+      helperText = 'Anywhere from 1.0 to 5.0.';
+    }
+    bot(pre, function(){
+      askText({
+        key:'rating', type:'number',
+        placeholder: verified && verified.rating ? String(verified.rating) : 'e.g. 4.6  (1.0 to 5.0)',
+        helper: helperText,
+        suggest: suggest,
+        validate: STEPS.rating.validate,
+        onSubmit: function(v){ answers.rating = +v; advance(); encourage('Halfway. The Google profile next.'); askGBPManagement(); }
+      });
+    });
+  }
+
+  function askGBPManagement(){
+    bot("Who manages the Google Business Profile day to day?", function(){
+      askChoices({
+        key:'gbpManagement', choices: STEPS.gbpManagement.choices,
+        onPick: function(v){ answers.gbpManagement = v; advance(); askPosts(); }
+      });
+    });
+  }
+
+  function askPosts(){
+    var prompt = isHospitality()
+      ? "Do you publish Google Posts (events, specials, happy hour, seasonal menus) on the profile?"
+      : "Do you publish Google Posts (updates, offers, events) on the profile?";
+    bot(prompt, function(){
+      askChoices({
+        key:'posts', choices: STEPS.posts.choices,
+        onPick: function(v){ answers.posts = v; advance(); askResponses(); }
+      });
+    });
+  }
+
+  function askResponses(){
+    bot("Are reviews being responded to, both positive and negative?", function(){
+      askChoices({
+        key:'responses', choices: STEPS.responses.choices,
+        onPick: function(v){ answers.responses = v; advance(); askPhotos(); }
+      });
+    });
+  }
+
+  function askPhotos(){
+    var prompt = isHospitality()
+      ? "Roughly how many photos are on the Google profile? Dish and space photos weighted heavier for hospitality."
+      : "Roughly how many photos are on the Google profile?";
+    bot(prompt, function(){
+      askText({
+        key:'photos', type:'number', placeholder:'e.g. 12',
+        helper:'Best guess is fine.',
+        skippable: true,
+        validate: STEPS.photos.validate,
+        onSubmit: function(v){
+          answers.photos = v == null ? null : +v;
+          advance();
+          if (answers.industry === 'hotel') askDirectBooking();
+          else if (isHospitality()) askHospitalityMenu();
+          else { encourage('Just a few left.'); askSitePlatform(); }
+        }
+      });
+    });
+  }
+
+  function askHospitalityMenu(){
+    var label = answers.industry === 'bar' ? 'menu or drinks list' : 'menu';
+    bot("Hospitality check. Is the " + label + " visible online (site, Google, or both)?", function(){
+      askChoices({
+        key:'hospitalityMenu', choices: STEPS.hospitalityMenu.choices,
+        onPick: function(v){
+          answers.hospitalityMenu = v; advance();
+          encourage('Just a few left.');
+          askSitePlatform();
+        }
+      });
+    });
+  }
+
+  function askDirectBooking(){
+    bot("Quick hotel check. Is direct booking live on your own site, or does booking run mainly through OTAs like Booking.com or Expedia?", function(){
+      askChoices({
+        key:'directBooking', choices: STEPS.directBooking.choices,
+        onPick: function(v){ answers.directBooking = v; advance(); encourage('Just a few left.'); askSitePlatform(); }
+      });
+    });
+  }
+
+  function askSitePlatform(){
+    bot("What platform is the website built on?", function(){
+      askChoices({
+        key:'sitePlatform', choices: STEPS.sitePlatform.choices,
+        onPick: function(v){
+          answers.sitePlatform = v; advance();
+          if (v === 'none'){ answers.siteMaintainer = 'none'; answers.serviceCoverage = 'no'; encourage('Last quick section.'); askContact(); }
+          else { askSiteMaintainer(); }
+        }
+      });
+    });
+  }
+
+  function askSiteMaintainer(){
+    bot("Who keeps the website up to date?", function(){
+      askChoices({
+        key:'siteMaintainer', choices: STEPS.siteMaintainer.choices,
+        onPick: function(v){ answers.siteMaintainer = v; advance(); askServiceCoverage(); }
+      });
+    });
+  }
+
+  function askServiceCoverage(){
+    bot("Does the website clearly list every service people actually search for?", function(){
+      askChoices({
+        key:'serviceCoverage', choices: STEPS.serviceCoverage.choices,
+        onPick: function(v){ answers.serviceCoverage = v; advance(); encourage('Last quick section.'); askContact(); }
+      });
+    });
+  }
+
+  function askContact(){
+    bot("Last step. Your name, best email, and how you want to be reached.", function(){
+      clearDock();
+      var form = el('div', 'alchat-contact-form');
+
+      var nameInput = el('input', 'alchat-input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'First name';
+      nameInput.autocomplete = 'given-name';
+      form.appendChild(nameInput);
+
+      var emailInput = el('input', 'alchat-input');
+      emailInput.type = 'email';
+      emailInput.placeholder = 'Email address';
+      emailInput.autocomplete = 'email';
+      form.appendChild(emailInput);
+
+      var prefLabel = el('div', 'alchat-contact-pref-label', 'Best way to follow up:');
+      form.appendChild(prefLabel);
+
+      var prefChoices = ['Call me', 'Text me', 'Email me', 'Let me pick a time'];
+      var prefValues  = ['call',    'text',    'email',   'calendly'];
+      var selectedPref = null;
+
+      var chipWrap = el('div', 'alchat-choices');
+      prefChoices.forEach(function(label, i){
+        var chip = el('button', 'alchat-chip', label);
+        chip.type = 'button';
+        chip.addEventListener('click', function(){
+          chipWrap.querySelectorAll('.alchat-chip').forEach(function(c){ c.classList.remove('selected'); });
+          chip.classList.add('selected');
+          selectedPref = prefValues[i];
+          if (selectedPref === 'call' || selectedPref === 'text'){
+            phoneRow.style.display = 'block';
+            setTimeout(function(){ try{ phoneInput.focus(); }catch(_){ } }, 30);
+          } else {
+            phoneRow.style.display = 'none';
+            phoneInput.value = '';
+          }
+        });
+        chipWrap.appendChild(chip);
+      });
+      form.appendChild(chipWrap);
+
+      var phoneRow = el('div', 'alchat-contact-phone-row');
+      phoneRow.style.display = 'none';
+      var phoneInput = el('input', 'alchat-input');
+      phoneInput.type = 'tel';
+      phoneInput.inputMode = 'tel';
+      phoneInput.placeholder = 'Phone number';
+      phoneInput.autocomplete = 'tel';
+      phoneRow.appendChild(phoneInput);
+      form.appendChild(phoneRow);
+
+      var sendBtn = el('button', 'alchat-send', 'Get my score');
+      sendBtn.style.marginTop = '4px';
+      form.appendChild(sendBtn);
+
+      var errMsg = el('div', '');
+      errMsg.style.color = '#ff5252';
+      errMsg.style.fontSize = '13px';
+      errMsg.style.minHeight = '16px';
+      errMsg.style.marginTop = '2px';
+      form.appendChild(errMsg);
+
+      dock.appendChild(form);
+      setTimeout(function(){ try{ nameInput.focus(); }catch(_){ } }, 50);
+
+      function trySubmit(){
+        var name  = (nameInput.value  || '').trim();
+        var email = (emailInput.value || '').trim();
+        var phone = (phoneInput.value || '').trim();
+        errMsg.textContent = '';
+        nameInput.style.borderColor  = '';
+        emailInput.style.borderColor = '';
+        phoneInput.style.borderColor = '';
+
+        if (name.length < 2){
+          nameInput.style.borderColor = '#ff5252';
+          errMsg.textContent = 'Need a first name.';
+          nameInput.focus();
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+          emailInput.style.borderColor = '#ff5252';
+          errMsg.textContent = 'Check the email address.';
+          emailInput.focus();
+          return;
+        }
+        if (!selectedPref){
+          errMsg.textContent = 'Pick a contact preference.';
+          return;
+        }
+        if ((selectedPref === 'call' || selectedPref === 'text') && phone.replace(/\D/g,'').length < 7){
+          phoneInput.style.borderColor = '#ff5252';
+          errMsg.textContent = 'Add a phone number.';
+          phoneInput.focus();
+          return;
+        }
+
+        sendBtn.disabled = true;
+        answers.name  = name;
+        answers.email = email;
+        answers.contactPreference = selectedPref;
+        answers.phone = phone || null;
+
+        var prefLabelStr = prefChoices[prefValues.indexOf(selectedPref)];
+        var summary = name + ' · ' + email + ' · ' + prefLabelStr + (phone ? ' · ' + phone : '');
+        user(summary);
+        clearDock();
+        advance();
+        showReport();
+      }
+
+      sendBtn.addEventListener('click', trySubmit);
+      phoneInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') trySubmit(); });
+    });
+  }
+
+  /* ============================================================
+     v6.2 INPUT DERIVATION. Maps the new front-end questions onto the
+     locked scoring inputs (gbp / site / pages / velocity) so the
+     scoring engine stays character-identical. Mutates answers.* in
+     place before scoreReport() reads them.
+     ============================================================ */
+  function deriveScoringInputs(){
+    var r = +answers.reviews || 0, y = +answers.years || 0;
+    answers.velocity = (r > 0 && y > 0) ? Math.round((r / (y * 12)) * 10) / 10 : 0;
+
+    var m = answers.gbpManagement, p = answers.posts;
+    if (m === 'none') answers.gbp = 'no';
+    else if (m === 'unsure') answers.gbp = (p === 'yes') ? 'partial' : 'no';
+    else answers.gbp = (p === 'yes' || p === 'sometimes') ? 'yes' : 'partial';
+
+    var plat = answers.sitePlatform, maint = answers.siteMaintainer;
+    if (plat === 'none' || !plat) answers.site = 'no';
+    else if (plat === 'unsure') answers.site = 'partial';
+    else if (maint === 'none') answers.site = 'partial';
+    else if (plat === 'custom') answers.site = (maint === 'agency' || maint === 'freelancer') ? 'yes' : 'partial';
+    else answers.site = 'yes';
+
+    var sc = answers.serviceCoverage;
+    answers.pages = (plat === 'none') ? 0 : (sc === 'yes' ? 6 : sc === 'somewhat' ? 3 : 0);
+  }
+
+  function routeEngagement(report){
+    var score = report.total;
+    var websiteStatus = (answers.sitePlatform === 'none') ? 'none'
+                      : (answers.site === 'yes') ? 'current' : 'outdated';
+    var managed = (answers.gbpManagement === 'self' || answers.gbpManagement === 'staff' || answers.gbpManagement === 'vendor');
+    var routes;
+    if (websiteStatus === 'none' || websiteStatus === 'outdated') routes = ['Fix','Grow','Protect'];
+    else if (score < 50) routes = ['Fix','Grow','Protect'];
+    else if (score < 70) routes = managed ? ['Fix','Protect'] : ['Fix','Grow','Protect'];
+    else if (score < 90) routes = managed ? ['Protect','Grow'] : ['Fix','Protect','Grow'];
+    else routes = managed ? ['Protect'] : ['Fix','Protect'];
+    if (!managed && routes.indexOf('Protect') === -1) routes.push('Protect');
+
+    var copy;
+    if (routes.length >= 3){
+      copy = 'You need the full sequence: fix what is broken, build what is missing, and protect what gets built.';
+    } else if (routes[0] === 'Fix'){
+      copy = 'Cleanup comes first. The Google Business Profile and local listings need to be aligned before they can work for you, then ongoing management holds the gains.';
+    } else if (routes[0] === 'Protect'){
+      copy = (routes.indexOf('Grow') !== -1)
+        ? 'The foundation is solid. Ongoing management protects the ranking, and targeted growth work compounds it.'
+        : 'The foundation is strong. The next axis is protection: steady management is what separates businesses that hold ranking from those that quietly slip.';
+    } else {
+      copy = 'A conversion-focused build turns the visibility you already have into customers, with ongoing management protecting it.';
+    }
+    answers.recommendedEngagement = routes.join(' + ');
+    return { routes: routes, copy: copy };
+  }
+
+  function computeStrengths(){
+    var out = [];
+    var R = +answers.reviews || 0, Rt = +answers.rating || 0, V = +answers.velocity || 0;
+    var P = +answers.photos || 0, hosp = isHospitality() || answers.industry === 'hotel';
+    if (!notSure.reviews && !notSure.rating && R >= 50 && Rt >= 4.3) out.push('A solid review base: ' + R + ' reviews at a ' + Rt + ' star average.');
+    else if (!notSure.rating && Rt >= 4.5 && R >= 10) out.push('A strong ' + Rt + ' star rating customers can trust.');
+    if (V >= 3) out.push('Fresh reviews are still coming in (about ' + V + ' a month).');
+    if (answers.gbp === 'yes') out.push('A Google Business Profile that is actively managed.');
+    if (answers.responses === 'yes') out.push('Reviews are being answered, the good and the bad.');
+    if (!notSure.photos && P >= (hosp ? 50 : 30)) out.push('Strong photo presence on the profile (' + P + ').');
+    if (answers.site === 'yes') out.push('A website that supports local search.');
+    if (answers.industry === 'hotel' && answers.directBooking === 'direct') out.push('Direct booking is live on your own site.');
+    if (isHospitality() && answers.hospitalityMenu === 'yes') out.push('Your ' + menuNoun() + ' is fully visible online.');
+    if (!out.length){
+      var Y = +answers.years || 0;
+      if (Y >= 5) out.push(Y + ' years in business, so Google has plenty of history to trust.');
+      else if (Y >= 2) out.push(Y + ' years in, which is enough history for Google to take you seriously.');
+      else out.push('You are early, which means the fastest wins are still on the table.');
+    }
+    return out.slice(0, 3);
+  }
+
+  function showReport(){
+    bot("Running the numbers...", function(){
+      deriveScoringInputs();
+      var report = scoreReport();
+      var finding = topFinding(report);
+      session.score = report.total;
+      session.grade = report.grade;
+      session.finishedAt = Date.now();
+      sendLead(report, finding);
+      renderResultCard(report, finding);
+      resultShown = true;
+    });
+  }
+
+  var resultWrap = null;
+
+  function renderResultCard(report, finding){
+    setProgress(100);
+    resultWrap = el('div', 'alchat-msg alchat-bot', '');
+    resultWrap.id = 'alchat-result-wrap';
+    resultWrap.style.maxWidth = '100%';
+    resultWrap.style.padding = '0';
+    resultWrap.style.background = 'transparent';
+    resultWrap.style.border = 'none';
+    paintResultInto(resultWrap, report, finding);
+    stream.appendChild(resultWrap);
+    clearDock();
+    bot('Report sent to ' + escapeHTML(answers.email) + '. ' + escapeHTML(answers.name || 'There') + ', when you want to walk through it, the ' + CONFIG.callDurationLabel + ' call is the next step. Some businesses need cleanup, some need deeper work. The scan already shows which.');
+    setTimeout(function(){ bindResultActions(report); scrollDown(); }, 200);
+  }
+
+  function updateResultCardInPlace(){
+    if (!resultWrap) return;
+    deriveScoringInputs();
+    var report = scoreReport();
+    var finding = topFinding(report);
+    paintResultInto(resultWrap, report, finding);
+    bindResultActions(report);
+    resultWrap.style.transition = 'box-shadow .9s ease';
+    resultWrap.style.boxShadow = '0 0 0 4px rgba(201,160,80,.25)';
+    setTimeout(function(){ resultWrap.style.boxShadow='none'; }, 700);
+  }
+
+  function unsureSummary(){
+    var keys = [];
+    for (var k in notSure){ if (notSure[k]) keys.push(k); }
+    if (!keys.length) return '';
+    var labels = keys.map(function(k){
+      return ({reviews:'review count', rating:'rating', velocity:'velocity', photos:'photo count', pages:'service page count'}[k]) || k;
+    });
+    var joined = labels.length === 1
+      ? labels[0]
+      : labels.length === 2
+        ? labels.join(' and ')
+        : labels.slice(0, -1).join(', ') + ', and ' + labels[labels.length-1];
+    return '<strong>Note on precision:</strong> ' + joined + ' was marked Not sure. Those are scored conservatively (treated as zero), so this score is the floor, not the ceiling. Firming them up is part of the call.';
+  }
+
+  function branchWarningHTML(){
+    if (!branchConflict) return '';
+    var msg = isHospitality()
+      ? 'Industry was changed to a hospitality category. The original flow did not ask about menu visibility, which is the largest hospitality lever. <strong>Restart the scan</strong> for an honest score on this industry.'
+      : 'Industry was changed away from hospitality. The original flow asked a hospitality-only question that no longer applies. <strong>Restart the scan</strong> for a clean read.';
+    return '<div class="alchat-branchwarn">' + msg + '</div>';
+  }
+
+  function paintResultInto(wrap, report, finding){
+    var benchmark = industryBenchmarks[answers.industry] || industryBenchmarks.other;
+    var unsureHTML = unsureSummary() ? '<div class="alchat-unsure">' + unsureSummary() + '</div>' : '';
+
+    // Block 2: Good news (curated strengths)
+    var strengths = computeStrengths();
+    var goodNewsBody = '<ul class="alchat-good-list">'
+      + strengths.map(function(s){ return '<li>' + escapeHTML(s) + '</li>'; }).join('')
+      + '</ul>';
+
+    // Block 4: Solution (Fix / Grow / Protect routing)
+    var route = routeEngagement(report);
+    var routeBadges = route.routes.map(function(r){
+      return '<span class="alchat-route-badge">' + escapeHTML(r) + '</span>';
+    }).join('<span class="alchat-route-sep">+</span>');
+
+    var pref = answers.contactPreference;
+    var ctaLabel = pref === 'text' ? 'Get a text within 24 hours'
+                 : pref === 'email' ? 'Send my walkthrough notes'
+                 : 'Set up the ' + CONFIG.callDurationLabel + ' walkthrough';
+
+    var html = ''
+      + '<div class="alchat-result">'
+
+      // Block 1: Score
+      + '<div class="alchat-result-block">'
+      +   '<div class="alchat-score-row">'
+      +     '<div class="alchat-score-num" style="color:'+report.color+'">'+report.total+'</div>'
+      +     '<div class="alchat-score-out">/ 100</div>'
+      +   '</div>'
+      +   '<div class="alchat-grade" style="color:'+report.color+'">'+escapeHTML(report.grade)+'</div>'
+      +   report.cats.map(function(c){
+            return '<div class="alchat-cat"><span>'+escapeHTML(c.name)+'</span><strong>'+c.pts+' / '+c.max+'</strong></div>';
+          }).join('')
+      + '</div>'
+
+      // Block 2: Good news
+      + '<div class="alchat-block-good">'
+      +   '<div class="alchat-block-label">What\'s working in your favor</div>'
+      +   goodNewsBody
+      + '</div>'
+
+      // Block 3: Not-good news
+      + '<div class="alchat-block-notgood">'
+      +   '<div class="alchat-block-label">What\'s holding the score back</div>'
+      +   '<div class="alchat-finding">'+finding+'<br><br><em style="color:#888;font-size:12px">'+escapeHTML(benchmark)+'</em></div>'
+      +   unsureHTML
+      +   branchWarningHTML()
+      + '</div>'
+
+      // Block 4: Solution
+      + '<div class="alchat-block-solution">'
+      +   '<div class="alchat-block-label">What we\'d do</div>'
+      +   '<div class="alchat-route-badges">'+routeBadges+'</div>'
+      +   '<div class="alchat-route-copy">'+escapeHTML(route.copy)+'</div>'
+      +   '<button class="alchat-cta" id="alchat-book">'+ctaLabel+'</button>'
+      +   '<button class="alchat-cta ghost" id="alchat-restart">Start over</button>'
+      + '</div>'
+
+      + '</div>';
+    wrap.innerHTML = html;
+  }
+
+  function bindResultActions(report){
+    var bk = document.getElementById('alchat-book');
+    var rs = document.getElementById('alchat-restart');
+    if (bk) bk.addEventListener('click', function(){
+      var u = CONFIG.calendlyURL
+            + '?name=' + encodeURIComponent(answers.name || '')
+            + '&email=' + encodeURIComponent(answers.email || '')
+            + '&a1=' + encodeURIComponent('Chat score: '+report.total+'. '+(answers.bizName||'')+'. '+(answers.bizCity||''));
+      window.open(u, '_blank');
+    });
+    if (rs) rs.addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); location.reload(); });
+  }
+
+  setProgress(0);
+  start();
+
+})();
+</script>
